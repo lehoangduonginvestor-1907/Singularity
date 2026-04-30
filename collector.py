@@ -18,10 +18,9 @@ import logging
 import requests
 import numpy as np
 import pandas as pd
+import time
+import csv
 from datetime import datetime, timezone, timedelta
-
-import gspread
-from google.oauth2.service_account import Credentials
 
 # ─── Thiết lập import physics engine ─────────────────────────────────────────
 # Script chạy từ thư mục gốc của project
@@ -30,7 +29,7 @@ from physics.engine_orchestrator import InterstellarOrchestrator
 from ingestion.fetchers import Type2Fetcher
 
 import astropy.units as u
-from astropy.coordinates import EarthLocation, AltAz, get_body, SkyCoord
+from astropy.coordinates import EarthLocation, AltAz, get_body
 from astropy.time import Time
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -39,37 +38,30 @@ log = logging.getLogger("collector")
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
 LAT  = float(os.getenv("COLLECT_LAT",  "20.886355"))
 LON  = float(os.getenv("COLLECT_LON",  "105.755763"))
-SHEET_NAME = os.getenv("SHEET_NAME", "Interstellar_Data")
-# Credentials từ GitHub Secret (JSON string)
-GSPREAD_CREDS_JSON = os.getenv("GSPREAD_CREDENTIALS", "")
-
-SCOPES = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive",
-]
+CSV_FILE = "catalog.csv"
+LOCAL_UTC_OFFSET = int(os.getenv("LOCAL_UTC_OFFSET", "7"))
+SLEEP_INTERVAL = int(os.getenv("SLEEP_INTERVAL", "1800")) # 30 phút mặc định
 
 COLUMNS = [
-    "timestamp_utc",
-    "lat", "lon",
+    "timestamp_utc", "timestamp_local", "lat", "lon",
     # Surface
-    "surf_temp_c", "surf_rh_pct", "surf_pressure_hpa",
-    "surf_cloud_cover_pct", "surf_aqi",
-    # Atmospheric layers
-    "atmos_1000hpa_temp_c", "atmos_1000hpa_wind_ms",
-    "atmos_850hpa_temp_c",  "atmos_850hpa_wind_ms",
-    "atmos_700hpa_temp_c",  "atmos_700hpa_wind_ms",
-    "atmos_500hpa_temp_c",  "atmos_500hpa_wind_ms",
-    "atmos_300hpa_temp_c",  "atmos_300hpa_wind_ms",
+    "surf_temp_c", "surf_rh_pct", "surf_pressure_hpa", "surf_cloud_cover_pct", "surf_aqi",
+    "surf_wind_ms", "surf_wind_dir",
+    # Atmospheric layers (Temp, Speed, Direction)
+    "atmos_1000hpa_temp_c", "atmos_1000hpa_wind_ms", "atmos_1000hpa_wind_dir",
+    "atmos_850hpa_temp_c",  "atmos_850hpa_wind_ms",  "atmos_850hpa_wind_dir",
+    "atmos_700hpa_temp_c",  "atmos_700hpa_wind_ms",  "atmos_700hpa_wind_dir",
+    "atmos_500hpa_temp_c",  "atmos_500hpa_wind_ms",  "atmos_500hpa_wind_dir",
+    "atmos_300hpa_temp_c",  "atmos_300hpa_wind_ms",  "atmos_300hpa_wind_dir",
     # Ephemeris
-    "moon_phase_deg", "moon_alt_deg",
+    "moon_phase_deg", "moon_alt_deg", "target_alt_deg",
     # Core Physics
-    "seeing_arcsec", "transparency", "sqm_mag_arcsec2",
+    "seeing_arcsec", "transparency", "sqm_mag_arcsec2", "bortle_class",
     "air_mass", "delta_t_dew_c",
     # Alerts
     "dew_danger", "air_mass_warning",
     # Heuristic Scores
-    "seeing_score_10", "transparency_score_10",
-    "lunar_score_10", "v_model_10",
+    "seeing_score_10", "transparency_score_10", "lunar_score_10", "v_model_10",
     # 7Timer Benchmark
     "bench_seeing_raw", "bench_trans_raw", "bench_v_model",
     # Delta
@@ -77,41 +69,44 @@ COLUMNS = [
 ]
 
 
-# ─── GOOGLE SHEETS ────────────────────────────────────────────────────────────
-def connect_sheet(sheet_name: str):
-    if not GSPREAD_CREDS_JSON:
-        raise RuntimeError("GSPREAD_CREDENTIALS env var is empty.")
-    creds_dict = json.loads(GSPREAD_CREDS_JSON)
-    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-    gc = gspread.authorize(creds)
-    try:
-        sh = gc.open(sheet_name)
-    except gspread.SpreadsheetNotFound:
-        sh = gc.create(sheet_name)
-        log.info(f"Created new spreadsheet: {sheet_name}")
+# ─── LOCAL STORAGE ───────────────────────────────────────────────────────────
+def ensure_csv():
+    if not os.path.exists(CSV_FILE):
+        with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(COLUMNS)
+        log.info(f"Created new CSV file: {CSV_FILE}")
 
-    try:
-        ws = sh.worksheet("raw_data")
-    except gspread.WorksheetNotFound:
-        ws = sh.add_worksheet(title="raw_data", rows=50000, cols=len(COLUMNS))
-        ws.append_row(COLUMNS)
-        log.info("Created worksheet 'raw_data' with header row.")
-
-    return ws
-
-
-def get_last_timestamp(ws) -> datetime | None:
-    """Lấy timestamp cuối cùng đã được ghi vào sheet."""
-    all_values = ws.col_values(1)  # Cột timestamp_utc
-    # Bỏ qua header
-    data_rows = [v for v in all_values[1:] if v.strip()]
-    if not data_rows:
+def get_last_timestamp_csv() -> datetime | None:
+    if not os.path.exists(CSV_FILE):
         return None
     try:
-        return datetime.fromisoformat(data_rows[-1]).replace(tzinfo=timezone.utc)
-    except ValueError:
+        # Sử dụng header=0 để đảm bảo bỏ qua dòng đầu tiên
+        df = pd.read_csv(CSV_FILE)
+        if df.empty:
+            return None
+        last_val = df["timestamp_utc"].iloc[-1]
+        return datetime.fromisoformat(last_val).replace(tzinfo=timezone.utc)
+    except Exception:
         return None
 
+def append_to_csv(rows):
+    with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
+
+
+def get_bortle(sqm):
+    """Tính Bortle Class từ SQM (ước tính)."""
+    if sqm > 21.75: return 1
+    if sqm > 21.60: return 2
+    if sqm > 21.30: return 3
+    if sqm > 20.80: return 4
+    if sqm > 20.10: return 5
+    if sqm > 19.50: return 6
+    if sqm > 18.50: return 7
+    if sqm > 17.50: return 8
+    return 9
 
 # ─── OPEN-METEO HISTORICAL FETCH ─────────────────────────────────────────────
 def fetch_historical_hours(lat: float, lon: float,
@@ -144,7 +139,7 @@ def fetch_historical_hours(lat: float, lon: float,
     url_surf = "https://api.open-meteo.com/v1/forecast"
     params_s = {
         "latitude": lat, "longitude": lon,
-        "hourly": "temperature_2m,relative_humidity_2m,surface_pressure,cloud_cover",
+        "hourly": "temperature_2m,relative_humidity_2m,surface_pressure,cloud_cover,windspeed_10m,winddirection_10m",
         "start_date": start_str, "end_date": end_str,
         "timezone": "UTC",
     }
@@ -180,13 +175,11 @@ def fetch_historical_hours(lat: float, lon: float,
             speed_kmh = da["hourly"][f"windspeed_{p_label}"][i] or 0
             direction = da["hourly"][f"winddirection_{p_label}"][i] or 0
             speed_ms  = speed_kmh / 3.6
-            dir_rad   = math.radians(direction)
             profile.append({
                 "pressure": p_hpa,
                 "temp": da["hourly"][f"temperature_{p_label}"][i] or 0,
-                "wind_u": -speed_ms * math.sin(dir_rad),
-                "wind_v": -speed_ms * math.cos(dir_rad),
                 "wind_speed": speed_ms,
+                "wind_dir": direction,
             })
 
         aqi_val = dq["hourly"]["european_aqi"][i]
@@ -196,6 +189,8 @@ def fetch_historical_hours(lat: float, lon: float,
             "pressure":     ds["hourly"]["surface_pressure"][i] or 1013,
             "cloud_cover":  ds["hourly"]["cloud_cover"][i] or 0,
             "aqi":          aqi_val if aqi_val is not None else 50,
+            "wind_speed":   (ds["hourly"]["windspeed_10m"][i] or 0) / 3.6,
+            "wind_dir":     ds["hourly"]["winddirection_10m"][i] or 0,
         }
         result.append({"time": t_dt, "profile": profile, "surface": surface})
 
@@ -239,9 +234,11 @@ def build_zenith_ephem(lat, lon, t_utc, moon_data):
     return ephem
 
 
-def compute_row(lat: float, lon: float, entry: dict) -> dict:
+def compute_row(lat: float, lon: float, entry: dict, benchmark_data: dict = None) -> list:
     """Tính toán tất cả thông số cho một giờ và trả về dict row."""
     t_utc   = entry["time"]
+    t_local = t_utc + timedelta(hours=LOCAL_UTC_OFFSET)
+    
     profile = entry["profile"]
     surface = entry["surface"]
 
@@ -253,18 +250,16 @@ def compute_row(lat: float, lon: float, entry: dict) -> dict:
     sc = payload["scores"]
     al = payload["alerts"]
 
-    # 7Timer benchmark (lấy 1 giờ)
-    bench = Type2Fetcher.fetch_benchmark_seeing_12h(lat, lon)
-    b = bench[0]
+    # Benchmark: Chỉ dùng nếu thời gian khớp (gần hiện tại), nếu không để N/A
+    b = benchmark_data if benchmark_data else {"seeing_raw": "N/A", "trans_raw": "N/A", "v_model_benchmark": 0.0}
 
     v_model = float(sc["v_model_10"])
-    v_bench = float(b["v_model_benchmark"])
-
-    layers = {f"atmos_{p}hpa": lyr for p, lyr in zip(
-        [1000, 850, 700, 500, 300], profile)}
+    v_bench = float(b.get("v_model_benchmark", 0.0))
+    sqm     = float(rp["sqm"])
 
     row = [
         t_utc.isoformat(),
+        t_local.isoformat(),
         lat, lon,
         # Surface
         round(float(surface["temp"]),        2),
@@ -272,19 +267,23 @@ def compute_row(lat: float, lon: float, entry: dict) -> dict:
         round(float(surface["pressure"]),    2),
         round(float(surface["cloud_cover"]), 2),
         round(float(surface["aqi"]),         2),
-        # Atmos
-        round(float(profile[0]["temp"]),         2), round(float(profile[0]["wind_speed"]), 3),
-        round(float(profile[1]["temp"]),         2), round(float(profile[1]["wind_speed"]), 3),
-        round(float(profile[2]["temp"]),         2), round(float(profile[2]["wind_speed"]), 3),
-        round(float(profile[3]["temp"]),         2), round(float(profile[3]["wind_speed"]), 3),
-        round(float(profile[4]["temp"]),         2), round(float(profile[4]["wind_speed"]), 3),
+        round(float(surface["wind_speed"]),  2),
+        round(float(surface["wind_dir"]),    1),
+        # Atmos (1000, 850, 700, 500, 300 hPa)
+        round(float(profile[0]["temp"]),         2), round(float(profile[0]["wind_speed"]), 3), round(float(profile[0]["wind_dir"]), 1),
+        round(float(profile[1]["temp"]),         2), round(float(profile[1]["wind_speed"]), 3), round(float(profile[1]["wind_dir"]), 1),
+        round(float(profile[2]["temp"]),         2), round(float(profile[2]["wind_speed"]), 3), round(float(profile[2]["wind_dir"]), 1),
+        round(float(profile[3]["temp"]),         2), round(float(profile[3]["wind_speed"]), 3), round(float(profile[3]["wind_dir"]), 1),
+        round(float(profile[4]["temp"]),         2), round(float(profile[4]["wind_speed"]), 3), round(float(profile[4]["wind_dir"]), 1),
         # Ephemeris
         round(float(moon["moon_phase"]), 2),
         round(float(moon["moon_alt"]),   2),
+        round(float(ephem_z["target_alt"]), 1), # target_alt_deg
         # Physics
         round(float(rp["seeing_arcsec"]),  4),
         round(float(rp["transparency"]),   4),
-        round(float(rp["sqm"]),            4),
+        round(sqm, 4),
+        get_bortle(sqm),
         round(float(rp.get("air_mass", 0)), 4),
         round(float(rp["delta_t"]),        2),
         # Alerts
@@ -305,31 +304,35 @@ def compute_row(lat: float, lon: float, entry: dict) -> dict:
     return row
 
 
-def main():
-    log.info(f"=== Interstellar Collector START === lat={LAT} lon={LON}")
+def run_collector():
+    log.info(f"--- Cycle Start: lat={LAT} lon={LON} ---")
 
-    # 1. Kết nối sheet
-    ws = connect_sheet(SHEET_NAME)
+    # 1. Đảm bảo file CSV tồn tại
+    ensure_csv()
 
     # 2. Tìm gap
-    last_ts = get_last_timestamp(ws)
+    last_ts = get_last_timestamp_csv()
     now_utc = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
 
     if last_ts is None:
-        # Lần đầu chạy: lấy 24h gần nhất
-        start_ts = now_utc - timedelta(hours=23)
-        log.info("First run — backfilling last 24h.")
+        # Lần đầu chạy: lấy 72h gần nhất (3 ngày)
+        start_ts = now_utc - timedelta(hours=71)
+        log.info("First run — backfilling last 72 hours.")
     else:
         start_ts = last_ts + timedelta(hours=1)
         if start_ts > now_utc:
-            log.info("Sheet is up-to-date. Nothing to do.")
+            log.info("CSV is up-to-date. Nothing to do.")
             return
         gap_hours = int((now_utc - last_ts).total_seconds() / 3600)
         log.info(f"Gap detected: {gap_hours} hours ({last_ts.isoformat()} → {now_utc.isoformat()})")
 
-    # 3. Fetch historical data for the gap
+    # 3. Fetch data
     entries = fetch_historical_hours(LAT, LON, start_ts, now_utc)
-    log.info(f"Fetched {len(entries)} hourly records from Open-Meteo.")
+    log.info(f"Fetched {len(entries)} records from Open-Meteo.")
+    
+    # 7Timer Benchmark (chỉ lấy 1 lần cho hiện tại)
+    bench_list = Type2Fetcher.fetch_benchmark_seeing_12h(LAT, LON)
+    current_bench = bench_list[0] if bench_list else None
 
     if not entries:
         log.warning("No data returned from API.")
@@ -337,21 +340,48 @@ def main():
 
     # 4. Compute + append
     rows_to_append = []
+    log.info(f"{'Time (UTC)':<17} | {'Temp':<5} | {'Hum':<4} | {'Cloud':<5} | {'Seeing':<6} | {'Trans':<5} | {'SQM':<6} | {'Score':<5}")
+    log.info("-" * 95)
+    
     for i, entry in enumerate(entries):
         try:
-            row = compute_row(LAT, LON, entry)
+            # Chỉ gán benchmark nếu là giờ hiện tại (entry cuối cùng)
+            is_recent = (i == len(entries) - 1)
+            row = compute_row(LAT, LON, entry, benchmark_data=current_bench if is_recent else None)
             rows_to_append.append(row)
-            log.info(f"[{i+1}/{len(entries)}] {entry['time'].isoformat()} — V-Model: {row[-4]}")
+            
+            # Log chi tiết thông số
+            # Index: Temp(4), Hum(5), Cloud(7), Seeing(22), Trans(23), SQM(24), Score(32)
+            t_str = entry['time'].strftime("%m-%d %H:00")
+            log.info(f"{t_str:<17} | {row[4]:>4}°C | {row[5]:>3}% | {row[7]:>4}% | {row[22]:>6.2f}\" | {row[23]:>5.2f} | {row[24]:>6.2f} | {row[32]:>5.1f}")
+            
         except Exception as e:
             log.error(f"Error processing {entry['time']}: {e}")
 
     if rows_to_append:
-        ws.append_rows(rows_to_append, value_input_option="USER_ENTERED")
-        log.info(f"✓ Appended {len(rows_to_append)} rows to Google Sheets.")
+        append_to_csv(rows_to_append)
+        log.info("-" * 95)
+        log.info(f"✓ Successfully appended {len(rows_to_append)} rows to {CSV_FILE}.")
     else:
         log.warning("No rows to append.")
 
-    log.info("=== Collector DONE ===")
+    log.info("--- Cycle Done ---")
+
+
+def main():
+    log.info(f"=== Interstellar Collector DAEMON START === Interval: {SLEEP_INTERVAL}s")
+    while True:
+        try:
+            run_collector()
+            log.info(f"Sleeping for {SLEEP_INTERVAL}s...")
+            time.sleep(SLEEP_INTERVAL)
+        except Exception as e:
+            log.error(f"CRITICAL ERROR: {e}")
+            log.info("Retrying in 60s...")
+            time.sleep(60)
+        except KeyboardInterrupt:
+            log.info("Stop requested by user.")
+            break
 
 
 if __name__ == "__main__":
