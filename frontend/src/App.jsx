@@ -178,7 +178,7 @@ export default function App() {
   const scan = async () => {
     setLoading(true); setError('');
     try {
-      const r = await fetch(`http://localhost:8000/api/global-sky?lat=${lat}&lon=${lon}`);
+      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/global-sky?lat=${lat}&lon=${lon}`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const d = await r.json();
       setGlobalData(d);
@@ -191,7 +191,7 @@ export default function App() {
     if (!name) return;
     setFLoading(true);
     try {
-      const r = await fetch(`http://localhost:8000/api/target-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(name)}`);
+      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/target-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(name)}`);
       const d = await r.json();
       setForecast(d.forecast);
     } catch(e) { console.error(e); }

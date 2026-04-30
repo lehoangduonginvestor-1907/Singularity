@@ -201,7 +201,7 @@ export default function DebugConsole({ targetName, lat, lon }) {
     if (!targetName) return;
     setLoading(true);
     try {
-      const r = await fetch(`http://localhost:8000/api/debug-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}`);
+      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/debug-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}`);
       const d = await r.json();
       setDebugData(d);
       setOpen(true);

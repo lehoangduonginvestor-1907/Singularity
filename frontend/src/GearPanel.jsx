@@ -20,7 +20,7 @@ export default function GearPanel({ lat, lon }) {
   const check = async () => {
     setLoading(true);
     try {
-      const url = `http://localhost:8000/api/gear-check?lat=${lat}&lon=${lon}&aperture_mm=${aperture}&focal_length_mm=${focal}&eyepiece_mm=${eyepiece}`;
+      const url = `${import.meta.env.VITE_API_URL}/api/gear-check?lat=${lat}&lon=${lon}&aperture_mm=${aperture}&focal_length_mm=${focal}&eyepiece_mm=${eyepiece}`;
       const r = await fetch(url);
       const d = await r.json();
       setResult(d); setOpen(true);

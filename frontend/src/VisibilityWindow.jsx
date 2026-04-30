@@ -13,7 +13,7 @@ export default function VisibilityWindow({ targetName, lat, lon }) {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await fetch(`http://localhost:8000/api/visibility-window?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}&days=5`);
+      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/visibility-window?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}&days=5`);
       const d = await r.json();
       setData(d); setOpen(true); setSelDay(0);
     } catch(e) { console.error(e); }
