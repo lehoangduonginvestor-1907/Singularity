@@ -1,0 +1,44 @@
+name: "Interstellar Data Collector"
+
+on:
+  schedule:
+    # Chạy mỗi giờ vào phút 05 (xx:05 UTC)
+    - cron: "5 * * * *"
+  # Cho phép chạy thủ công từ GitHub UI
+  workflow_dispatch:
+
+jobs:
+  collect:
+    name: "Collect & Upload to Google Sheets"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements_collector.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements_collector.txt
+
+      - name: Run collector
+        env:
+          GSPREAD_CREDENTIALS: ${{ secrets.GSPREAD_CREDENTIALS }}
+          SHEET_NAME: ${{ secrets.SHEET_NAME || 'Interstellar_Data' }}
+          COLLECT_LAT: ${{ vars.COLLECT_LAT || '21.0285' }}
+          COLLECT_LON: ${{ vars.COLLECT_LON || '105.8542' }}
+        run: python collector.py
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: collector-log
+          path: "*.log"
+          if-no-files-found: ignore

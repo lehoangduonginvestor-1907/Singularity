@@ -1,0 +1,81 @@
+# ==============================================================================
+# SECTION 1: PYTHON (FastAPI Backend)
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv
+venv/
+ENV/
+.env
+.envrc
+
+# ==============================================================================
+# SECTION 2: JAVASCRIPT/REACT (Frontend)
+# ==============================================================================
+node_modules/
+frontend/node_modules/
+.DS_Store
+dist/
+frontend/dist/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# ==============================================================================
+# SECTION 3: AI AGENTS & ANTIGRAVITY JUNK (IMPORTANT!)
+# ==============================================================================
+# Loại bỏ đống file rác từ hệ thống hỗ trợ code
+.gemini/
+.antigravity/
+.tempmediaStorage/
+artifacts/
+browser/
+*.metadata.json
+*.resolved
+*.resolved.0
+overview.txt
+
+# ==============================================================================
+# SECTION 4: MEDIA & RESEARCH DATA (Sạch hóa commit)
+# ==============================================================================
+# Loại bỏ các ảnh chụp màn hình rác phát sinh trong quá trình code
+*.png
+*.jpg
+*.jpeg
+*.webp
+!frontend/src/assets/**/*   # Giữ lại ảnh nếu nó nằm trong folder assets của code
+*.log
+sensor_log.csv              # Không đẩy file dữ liệu thô lên trừ khi bạn muốn
+
+# ==============================================================================
+# SECTION 5: IDE (VS Code & PyCharm)
+# ==============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
