@@ -100,27 +100,35 @@ _DSO_TYPES    = {"Nebula", "Galaxy", "Open Cluster", "Globular Cluster",
                  "Supernova Remnant", "Planetary Nebula"}
 _PLANET_TYPES = {"Planet"}
 
-def _type_aware_score(sc: dict, target_type: str) -> float:
+def _type_aware_score(payload: dict, target_type: str) -> float:
     """
-    Re-weight sub-scores by target type.
-    Planets: bright point sources → lunar irrelevant, seeing dominates.
-    DSOs:    faint extended objects → sky darkness (lunar) is critical.
+    Re-weight sub-scores by target type and apply physics-based lunar penalty.
+    DSOs: Extremely sensitive to moonlight (sensitivity=2.0, threshold=21.0).
+    Planets: Very bright, low sensitivity (sensitivity=0.3, threshold=17.5).
+    Formula: final_score = base_score - max(0, threshold - m_sky) * sensitivity
     """
+    sc = payload["scores"]
+    m_sky = payload["raw_physics"]["sqm"]
+    
     if target_type in _PLANET_TYPES:
-        # Trăng rằm không ảnh hưởng hành tinh sáng
-        raw = (sc["seeing_score_10"]       * 0.60
-             + sc["transparency_score_10"] * 0.40
-             + sc["lunar_score_10"]        * 0.00)
+        # Planets: seeing dominates (60%), transparency (40%), low lunar sensitivity
+        base_score = (sc["seeing_score_10"] * 0.60 + sc["transparency_score_10"] * 0.40)
+        sensitivity = 0.3
+        threshold = 17.5
     elif target_type in _DSO_TYPES:
-        # Tinh vân/thiên hà bị ánh trăng nuốt chửng → lunar weight 45%
-        raw = (sc["seeing_score_10"]       * 0.25
-             + sc["transparency_score_10"] * 0.30
-             + sc["lunar_score_10"]        * 0.45)
+        # DSOs: transparency and darkness are critical
+        base_score = (sc["seeing_score_10"] * 0.40 + sc["transparency_score_10"] * 0.60)
+        sensitivity = 2.0
+        threshold = 21.0
     else:  # Double stars, defaults
-        raw = (sc["seeing_score_10"]       * 0.50
-             + sc["transparency_score_10"] * 0.30
-             + sc["lunar_score_10"]        * 0.20)
-    return float(np.clip(raw, 0.0, 10.0))
+        base_score = (sc["seeing_score_10"] * 0.50 + sc["transparency_score_10"] * 0.50)
+        sensitivity = 1.0
+        threshold = 19.0
+
+    lunar_penalty = max(0.0, threshold - m_sky) * sensitivity
+    final_score = base_score - lunar_penalty
+    
+    return float(np.clip(final_score, 0.0, 10.0))
 
 
 def get_tonights_best(lat: float, lon: float, dt_utc: datetime,
@@ -141,8 +149,7 @@ def get_tonights_best(lat: float, lon: float, dt_utc: datetime,
         if rho <= 40.0:                       continue
 
         payload  = InterstellarOrchestrator.map_and_execute(ephem, atmos_profile, surface_data)
-        sc       = payload["scores"]
-        score    = _type_aware_score(sc, ttype)
+        score    = _type_aware_score(payload, ttype)
 
         # Hard veto: dew danger or below horizon
         if payload["alerts"]["dew_danger"] or alt <= 0:
@@ -154,7 +161,7 @@ def get_tonights_best(lat: float, lon: float, dt_utc: datetime,
             "Mag":      float(mag),
             "Altitude": round(float(alt), 1),
             "Score":    round(score, 1),
-            "LunarWeight": "0%" if ttype in _PLANET_TYPES else "45%" if ttype in _DSO_TYPES else "20%",
+            "LunarWeight": f"Sens:{0.3 if ttype in _PLANET_TYPES else 2.0 if ttype in _DSO_TYPES else 1.0}",
         })
 
     best_targets.sort(key=lambda x: x["Score"], reverse=True)
@@ -188,7 +195,8 @@ def get_global_sky(lat: float = Query(...), lon: float = Query(...)):
     
     payload_z = InterstellarOrchestrator.map_and_execute(ephem_z, atmos_12h[0]["profile"], surface_12h[0])
     
-    global_score = float(payload_z["scores"]["v_model_10"])
+    # Sử dụng _type_aware_score cho Zenith (Global Score)
+    global_score = _type_aware_score(payload_z, "Zenith")
     zenith_trans = float(payload_z["raw_physics"]["transparency"])
     seeing_arcsec = float(payload_z["raw_physics"]["seeing_arcsec"])
     dew_danger = bool(payload_z["alerts"]["dew_danger"])
@@ -220,6 +228,7 @@ def get_target_forecast(lat: float = Query(...), lon: float = Query(...), target
     if target_row.empty:
         return {"error": "Target not found"}
     target_row = target_row.iloc[0]
+    ttype = str(target_row["Type"])
     
     forecast = []
     for i in range(12):
@@ -227,9 +236,12 @@ def get_target_forecast(lat: float = Query(...), lon: float = Query(...), target
         ephem = AstroHelper.get_ephemeris(lat, lon, current_time, target_row)
         payload = InterstellarOrchestrator.map_and_execute(ephem, atmos_12h[i]["profile"], surface_12h[i])
         
+        # Áp dụng logic chấm điểm mới cho từng bước forecast
+        score = _type_aware_score(payload, ttype)
+        
         forecast.append({
             "time": current_time.strftime("%H:%M"),
-            "physics_score": round(float(payload["scores"]["v_model_10"]), 1),
+            "physics_score": round(score, 1),
             "benchmark_score": float(bench_12h[i]["v_model_benchmark"])
         })
         
@@ -307,9 +319,9 @@ def get_debug_forecast(lat: float = Query(...), lon: float = Query(...), target_
             "interstellar_scores": {
                 "seeing_score": round(float(sc["seeing_score_10"]), 2),
                 "transparency_score": round(float(sc["transparency_score_10"]), 2),
-                "lunar_score": round(float(sc["lunar_score_10"]), 2),
-                "v_model_final": round(float(sc["v_model_10"]), 2),
-                "weights": {"seeing": "50%", "transparency": "30%", "lunar": "20%"},
+                "lunar_penalty_applied": round(max(0, (21.0 if str(target_row["Type"]) in _DSO_TYPES else 17.5 if str(target_row["Type"]) in _PLANET_TYPES else 19.0) - rp["sqm"]) * (2.0 if str(target_row["Type"]) in _DSO_TYPES else 0.3 if str(target_row["Type"]) in _PLANET_TYPES else 1.0), 2),
+                "final_score": round(_type_aware_score(payload, str(target_row["Type"])), 2),
+                "logic": "Physics-based Sensitivity Penalty",
             },
 
             # ── 7Timer Benchmark ──
