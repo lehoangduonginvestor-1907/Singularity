@@ -78,7 +78,7 @@ const TargetLocator = ({ onLocationSelect }) => {
   return (
     <div className="relative font-mono w-full max-w-2xl mx-auto" ref={dropdownRef}>
       {/* Input Group */}
-      <div className="flex items-center border border-red-900 bg-[#0a0a0a] p-1 shadow-[0_0_10px_rgba(220,38,38,0.05)]">
+      <div className="flex items-center border border-red-900/50 bg-[#0a0a0a] p-1">
         <span className="text-red-600 px-3 opacity-70 animate-pulse">{'>'}</span>
         <input
           type="text"
@@ -103,7 +103,7 @@ const TargetLocator = ({ onLocationSelect }) => {
 
       {/* Dropdown Results */}
       {isOpen && (results.length > 0 || isScanning) && (
-        <div className="absolute top-full left-0 right-0 mt-1 border border-red-900 bg-[#0a0a0a] z-50 shadow-[0_0_15px_rgba(220,38,38,0.1)]">
+        <div className="absolute top-full left-0 right-0 mt-1 border border-red-900/50 bg-[#0a0a0a] z-50">
           {isScanning ? (
             <div className="p-4 text-red-500/50 text-sm animate-pulse uppercase tracking-widest">
               [ACQUIRING GEOLOCATION DATA...]

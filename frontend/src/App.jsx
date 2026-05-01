@@ -44,28 +44,29 @@ const Gargantua = () => (
 );
 
 /* ─── METRIC CARD ────────────────────────────────────────────────────────── */
-const MetricCard = ({ label, value, unit = '', color = '#00e5ff', sub = '', highlight = false, delay = 0 }) => (
+const MetricCard = ({ label, value, unit = '', color = '#00e5ff', sub = '', icon: Icon, delay = 0 }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, delay, ease: [0.23, 1, 0.32, 1] }}
     style={{
-      background: 'rgba(255,255,255,0.02)',
-      border: `1px solid ${highlight ? color : 'rgba(255,255,255,0.08)'}`,
+      background: '#171717',
+      border: '1px solid #2a2a2a',
       borderRadius: '16px',
       padding: '24px',
       position: 'relative',
       overflow: 'hidden',
-      boxShadow: highlight ? `0 0 30px ${color}20` : 'none',
     }}
   >
-    {highlight && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: color }} />}
-    <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{label}</p>
-    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-      <span style={{ fontSize: '42px', fontWeight: 800, lineHeight: 1, color: highlight ? color : '#fff', fontFamily: 'Roboto Mono' }}>{value}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+      {Icon && <Icon size={16} color={color} />}
+      <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{label}</p>
+    </div>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+      <span style={{ fontSize: '42px', fontWeight: 800, lineHeight: 1, color: '#fff', fontFamily: 'Roboto Mono' }}>{value}</span>
       {unit && <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{unit}</span>}
     </div>
-    {sub && <p style={{ margin: '12px 0 0', fontSize: '12px', color: highlight ? color : 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{sub}</p>}
+    {sub && <p style={{ margin: '12px 0 0', fontSize: '12px', color: color, fontWeight: 500 }}>{sub}</p>}
   </motion.div>
 );
 
@@ -269,35 +270,40 @@ export default function App() {
                   <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: '0.05em' }}>{t.app_sub}</p>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', background: '#171717', padding: '6px', borderRadius: '16px', border: '1px solid #2a2a2a' }}>
                   {/* Language Switcher */}
-                  <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                    <button onClick={() => setLang('en')} style={{ padding: '8px 12px', background: lang === 'en' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'en' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>EN</button>
-                    <button onClick={() => setLang('vi')} style={{ padding: '8px 12px', background: lang === 'vi' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'vi' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>VI</button>
+                  <div style={{ display: 'flex', borderRadius: '10px', overflow: 'hidden' }}>
+                    <button onClick={() => setLang('en')} style={{ padding: '8px 16px', background: lang === 'en' ? '#2a2a2a' : 'transparent', border: 'none', color: lang === 'en' ? '#fff' : '#888', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>EN</button>
+                    <button onClick={() => setLang('vi')} style={{ padding: '8px 16px', background: lang === 'vi' ? '#2a2a2a' : 'transparent', border: 'none', color: lang === 'vi' ? '#fff' : '#888', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>VI</button>
                   </div>
+
+                  <div style={{ width: '1px', height: '24px', background: '#2a2a2a', margin: '0 4px' }} />
 
                   <button
                     onClick={() => setRedVision(!redVision)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '8px',
-                      background: redVision ? 'rgba(248,113,113,0.1)' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${redVision ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                      color: redVision ? '#f87171' : 'rgba(255,255,255,0.6)',
-                      borderRadius: '12px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.3s'
+                      background: redVision ? 'rgba(248,113,113,0.1)' : 'transparent',
+                      border: 'none',
+                      color: redVision ? '#f87171' : '#888',
+                      borderRadius: '10px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.3s'
                     }}
+                    title={t.red_vision}
                   >
                     {redVision ? <EyeOff size={16} /> : <Eye size={16} />}
-                    {t.red_vision}
+                    <span className="hidden sm:inline">{t.red_vision}</span>
                   </button>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '8px 12px' }}>
-                    <MapPin size={16} color="rgba(255,255,255,0.4)" />
-                    <input type="number" value={lat} onChange={e=>setLat(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '70px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
-                    <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
-                    <input type="number" value={lon} onChange={e=>setLon(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '70px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
+                  <div style={{ width: '1px', height: '24px', background: '#2a2a2a', margin: '0 4px' }} />
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }}>
+                    <MapPin size={16} color="#888" />
+                    <input type="number" value={lat} onChange={e=>setLat(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '60px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
+                    <div style={{ width: '1px', height: '16px', background: '#2a2a2a' }} />
+                    <input type="number" value={lon} onChange={e=>setLon(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '60px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
                   </div>
                   
-                  <button onClick={handleManualSync} disabled={loading} style={{ background: 'linear-gradient(135deg, #00e5ff, #3b82f6)', border: 'none', borderRadius: '12px', color: '#000', padding: '10px 24px', fontSize: '13px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer', boxShadow: '0 4px 20px rgba(0,229,255,0.2)' }}>
+                  <button onClick={handleManualSync} disabled={loading} style={{ background: '#2563eb', border: 'none', borderRadius: '10px', color: '#fff', padding: '8px 20px', fontSize: '13px', fontWeight: 700, cursor: loading ? 'wait' : 'pointer' }}>
                     {loading ? t.scanning : t.sync}
                   </button>
                 </div>
@@ -342,22 +348,22 @@ export default function App() {
                         {zm.global_score >= 7 ? t.cond_exc : zm.global_score >= 4 ? t.cond_mod : t.cond_poor}
                       </h2>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                        <MetricCard label={t.global_sky} value={zm.global_score} unit="/ 10" color={zm.global_score >= 7 ? '#00e5ff' : zm.global_score >= 4 ? '#fbbf24' : '#f87171'} highlight delay={0} sub={zm.global_score >= 7 ? t.clear_skies : t.proceed_caution} />
-                        <MetricCard label={t.zenith_seeing} value={zm.seeing_arcsec} unit='"' color="#a78bfa" delay={0.1} sub={t.arcsec_fwhm} />
-                        <MetricCard label={t.transparency} value={(zm.transparency * 100).toFixed(0)} unit="%" color="#34d399" delay={0.2} sub={t.atmos_clarity} />
-                        <MetricCard label={t.dew_risk} value={zm.dew_danger ? t.danger : t.safe} color={zm.dew_danger ? '#f87171' : '#34d399'} delay={0.3} sub={zm.dew_danger ? t.cond_risk : t.lens_protected} />
+                        <MetricCard icon={Globe} label={t.global_sky} value={zm.global_score} unit="/ 10" color={zm.global_score >= 7 ? '#00e5ff' : zm.global_score >= 4 ? '#fbbf24' : '#f87171'} delay={0} sub={zm.global_score >= 7 ? t.clear_skies : t.proceed_caution} />
+                        <MetricCard icon={Eye} label={t.zenith_seeing} value={zm.seeing_arcsec} unit='"' color="#a78bfa" delay={0.1} sub={t.arcsec_fwhm} />
+                        <MetricCard icon={Sparkles} label={t.transparency} value={(zm.transparency * 100).toFixed(0)} unit="%" color="#34d399" delay={0.2} sub={t.atmos_clarity} />
+                        <MetricCard icon={Target} label={t.dew_risk} value={zm.dew_danger ? t.danger : t.safe} color={zm.dew_danger ? '#f87171' : '#34d399'} delay={0.3} sub={zm.dew_danger ? t.cond_risk : t.lens_protected} />
                       </div>
                     </div>
 
                     {/* TARGET EXPLORER */}
-                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '32px', marginBottom: '32px' }}>
+                    <div style={{ background: '#171717', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '32px', marginBottom: '32px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
                         <div>
                           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{t.target_exp}</h2>
                           <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{t.physics_trace} ({tzLabel})</p>
                         </div>
                         <select value={targetName} onChange={e => setTargetName(e.target.value)}
-                          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 20px', color: 'white', fontFamily: 'inherit', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer', minWidth: '240px', appearance: 'none' }}>
+                          style={{ background: '#222', border: '1px solid #333', borderRadius: '8px', padding: '10px 16px', color: 'white', fontFamily: 'inherit', fontSize: '14px', fontWeight: 500, outline: 'none', cursor: 'pointer', minWidth: '200px' }}>
                           {globalData.catalog_names.map(n => <option key={n} value={n} style={{ background: '#050505' }}>{n}</option>)}
                         </select>
                       </div>
