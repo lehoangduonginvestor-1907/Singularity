@@ -66,8 +66,8 @@ def abs_air_mass(alt_deg: float, p_hpa: float) -> float:
     # Validate pressure_hpa -- phai trong [950, 1050] hPa
     # Neu ngoai range: raise ValueError kem message ro rang
 
-    if p_hpa > 1200 or p_hpa < 700:
-        raise ValueError(f"Invalid parameters : p_hpa = {p_hpa}. Must be in [700, 1200]")
+    if p_hpa > 1200 or p_hpa < 400:
+        raise ValueError(f"Invalid parameters : p_hpa = {p_hpa}. Must be in [400, 1200]")
 
     #Tim x_abs chuan theo cong thuc 
     # X_abs = X_rel * (pressure_hpa / P0_HPA)

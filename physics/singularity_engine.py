@@ -41,28 +41,41 @@ def phys_engine(target : dict, api : dict, sensor : dict) -> dict:
 
     #turbulence:
     levels = api["pressure_levels"]
-    heights_m = []
+    heights_m = [0.0]
+    valid_levels = []
     for i in range(len(levels["pressure_hpa"])):
+        if levels["pressure_hpa"][i] >= sensor["pressure_hpa"]:
+            continue
         temps = [sensor["temp_c"] + 273.15]
         temps.extend(levels["temp_k"][:i+1])
         temp_mean_k = np.mean(temps)
         h = hypsometric(sensor["pressure_hpa"], levels["pressure_hpa"][i], temp_mean_k)
         heights_m.append(h)
+        valid_levels.append(i)
+        
     heights_m = np.array(heights_m)
 
-
-
-    dT = levels["temp_k"][1] - levels["temp_k"][0]
-    dh = heights_m[1] - heights_m[0]
-    lapse_rate_ground = dT / dh
+    if len(valid_levels) > 0:
+        first_valid_i = valid_levels[0]
+        dT = levels["temp_k"][first_valid_i] - (sensor["temp_c"] + 273.15)
+        dh = heights_m[1] - heights_m[0]
+        lapse_rate_ground = dT / dh if dh > 0 else -9.8e-3
+    else:
+        lapse_rate_ground = -9.8e-3
 
     cn2_ground = tatarski_cn2(sensor["temp_c"] + 273.15, sensor["pressure_hpa"], lapse_rate_ground)
     cn2_profile = hv57_profile(heights_m, api["v_300hpa"], cn2_ground)
 
     if "wind_u" in levels and "wind_v" in levels:
+        u_vals = [0.0]
+        v_vals = [0.0]
+        for idx in valid_levels:
+            u_vals.append(levels["wind_u"][idx])
+            v_vals.append(levels["wind_v"][idx])
+            
         for i in range(1, len(heights_m)):
-            u1, u2 = levels["wind_u"][i-1], levels["wind_u"][i]
-            v1, v2 = levels["wind_v"][i-1], levels["wind_v"][i]
+            u1, u2 = u_vals[i-1], u_vals[i]
+            v1, v2 = v_vals[i-1], v_vals[i]
             dh_shear = heights_m[i] - heights_m[i-1]
             if dh_shear > 0:
                 shear = wind_shear(u1, u2, v1, v2, dh_shear)

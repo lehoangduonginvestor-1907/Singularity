@@ -193,9 +193,19 @@ def b_moon_to_mag(b_moon: float, c_offset: float = 22.0) -> float:
     # Khi Trang non, b_moon ~ 0 --> log10 khong xac dinh
     # Neu b_moon <= 0: return c_offset (nen toi hoan toan)
 
-    # Tinh m_sky = -2.5 * np.log10(b_moon) + c_offset
-    return -2.5 * np.log10(b_moon) + c_offset
-    pass
+    # Hằng số chuẩn hóa (Calibration Factor)
+    # Được tính toán để Trăng tròn tại Thiên đỉnh (Full Moon, Zenith) có SQM ~ 13.5
+    K_CALIB = 620.0
+    
+    # Tính tổng quang thông (flux) của nền trời tối và mặt trăng
+    # Nền trời tối tương ứng với flux = 1.0 (ở mốc c_offset)
+    flux_dark = 1.0
+    flux_moon = b_moon / K_CALIB
+    flux_total = flux_dark + flux_moon
+    
+    # Chuyển đổi lại sang magnitude
+    m_sky = c_offset - 2.5 * np.log10(flux_total)
+    return m_sky
 
 
 # ============================================================
