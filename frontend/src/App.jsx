@@ -49,24 +49,17 @@ const MetricCard = ({ label, value, unit = '', color = '#00e5ff', sub = '', icon
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, delay, ease: [0.23, 1, 0.32, 1] }}
-    style={{
-      background: '#171717',
-      border: '1px solid #2a2a2a',
-      borderRadius: '16px',
-      padding: '24px',
-      position: 'relative',
-      overflow: 'hidden',
-    }}
+    className="bg-[#171717] border border-[#2a2a2a] rounded-2xl p-5 sm:p-6 relative overflow-hidden"
   >
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+    <div className="flex items-center gap-2 mb-3">
       {Icon && <Icon size={16} color={color} />}
-      <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{label}</p>
+      <p className="m-0 text-[11px] font-bold tracking-[0.15em] text-white/40 uppercase">{label}</p>
     </div>
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-      <span style={{ fontSize: '42px', fontWeight: 800, lineHeight: 1, color: '#fff', fontFamily: 'Roboto Mono' }}>{value}</span>
-      {unit && <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{unit}</span>}
+    <div className="flex items-baseline gap-1.5">
+      <span className="text-4xl sm:text-5xl font-extrabold leading-none text-white font-mono">{value}</span>
+      {unit && <span className="text-base sm:text-lg text-white/40 font-medium">{unit}</span>}
     </div>
-    {sub && <p style={{ margin: '12px 0 0', fontSize: '12px', color: color, fontWeight: 500 }}>{sub}</p>}
+    {sub && <p className="m-0 mt-3 text-[11px] sm:text-xs font-medium" style={{ color }}>{sub}</p>}
   </motion.div>
 );
 
@@ -281,56 +274,50 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
-            style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}
+            className="w-full max-w-[1200px] mx-auto px-4 py-8 sm:px-6 md:py-10"
           >
             {/* ── HEADER ── */}
-            <header style={{ display: 'flex', flexDirection: 'column', marginBottom: '40px', gap: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+            <header className="flex flex-col gap-5 mb-8 sm:mb-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
                 <div 
                   className="cursor-pointer" 
                   onClick={() => setViewState('landing')}
                   title="Return to Main Search"
                 >
-                  <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Sparkles color="#a78bfa" size={28} /> {t.app_title}
+                  <h1 className="m-0 text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #fff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    <Sparkles color="#a78bfa" size={28} className="shrink-0" /> {t.app_title}
                   </h1>
-                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: '0.05em' }}>{t.app_sub}</p>
+                  <p className="m-0 mt-1 text-xs sm:text-sm text-white/40 font-medium tracking-wide">{t.app_sub}</p>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', background: '#171717', padding: '6px', borderRadius: '16px', border: '1px solid #2a2a2a' }}>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-[#171717] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-[#2a2a2a] w-full sm:w-auto">
                   {/* Language Switcher */}
-                  <div style={{ display: 'flex', borderRadius: '10px', overflow: 'hidden' }}>
-                    <button onClick={() => setLang('en')} style={{ padding: '8px 16px', background: lang === 'en' ? '#2a2a2a' : 'transparent', border: 'none', color: lang === 'en' ? '#fff' : '#888', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>EN</button>
-                    <button onClick={() => setLang('vi')} style={{ padding: '8px 16px', background: lang === 'vi' ? '#2a2a2a' : 'transparent', border: 'none', color: lang === 'vi' ? '#fff' : '#888', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>VI</button>
+                  <div className="flex rounded-lg overflow-hidden shrink-0">
+                    <button onClick={() => setLang('en')} className={`px-3 py-2 sm:px-4 text-xs sm:text-sm font-semibold transition-colors ${lang === 'en' ? 'bg-[#2a2a2a] text-white' : 'bg-transparent text-[#888]'}`}>EN</button>
+                    <button onClick={() => setLang('vi')} className={`px-3 py-2 sm:px-4 text-xs sm:text-sm font-semibold transition-colors ${lang === 'vi' ? 'bg-[#2a2a2a] text-white' : 'bg-transparent text-[#888]'}`}>VI</button>
                   </div>
 
-                  <div style={{ width: '1px', height: '24px', background: '#2a2a2a', margin: '0 4px' }} />
+                  <div className="w-[1px] h-6 bg-[#2a2a2a] hidden sm:block" />
 
                   <button
                     onClick={() => setRedVision(!redVision)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      background: redVision ? 'rgba(248,113,113,0.1)' : 'transparent',
-                      border: 'none',
-                      color: redVision ? '#f87171' : '#888',
-                      borderRadius: '10px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.3s'
-                    }}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 sm:px-4 text-xs sm:text-sm font-semibold transition-colors shrink-0 ${redVision ? 'bg-red-400/10 text-red-400' : 'bg-transparent text-[#888]'}`}
                     title={t.red_vision}
                   >
                     {redVision ? <EyeOff size={16} /> : <Eye size={16} />}
-                    <span className="hidden sm:inline">{t.red_vision}</span>
+                    <span className="hidden md:inline">{t.red_vision}</span>
                   </button>
                   
-                  <div style={{ width: '1px', height: '24px', background: '#2a2a2a', margin: '0 4px' }} />
+                  <div className="w-[1px] h-6 bg-[#2a2a2a] hidden sm:block" />
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }}>
-                    <MapPin size={16} color="#888" />
-                    <input type="number" value={lat} onChange={e=>setLat(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '60px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
-                    <div style={{ width: '1px', height: '16px', background: '#2a2a2a' }} />
-                    <input type="number" value={lon} onChange={e=>setLon(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '60px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
+                  <div className="flex items-center gap-2 px-2 py-2 sm:px-3 grow sm:grow-0 shrink-0">
+                    <MapPin size={16} color="#888" className="shrink-0" />
+                    <input type="number" value={lat} onChange={e=>setLat(parseFloat(e.target.value))} className="bg-transparent border-none outline-none text-white w-14 sm:w-16 font-mono text-xs sm:text-sm" />
+                    <div className="w-[1px] h-4 bg-[#2a2a2a] shrink-0" />
+                    <input type="number" value={lon} onChange={e=>setLon(parseFloat(e.target.value))} className="bg-transparent border-none outline-none text-white w-14 sm:w-16 font-mono text-xs sm:text-sm" />
                   </div>
                   
-                  <button onClick={handleManualSync} disabled={loading} style={{ background: '#2563eb', border: 'none', borderRadius: '10px', color: '#fff', padding: '8px 20px', fontSize: '13px', fontWeight: 700, cursor: loading ? 'wait' : 'pointer' }}>
+                  <button onClick={handleManualSync} disabled={loading} className="bg-blue-600 rounded-lg text-white px-4 py-2 sm:px-5 text-xs sm:text-sm font-bold cursor-pointer shrink-0 grow sm:grow-0 flex justify-center w-full sm:w-auto mt-1 sm:mt-0 disabled:opacity-50">
                     {loading ? t.scanning : t.sync}
                   </button>
                 </div>
@@ -338,7 +325,7 @@ export default function App() {
             </header>
 
             {/* ── TAB NAV ── */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '16px' }}>
+            <div className="flex flex-nowrap gap-3 mb-8 border-b border-white/5 pb-4 overflow-x-auto no-scrollbar w-full">
               {TABS.map(tab => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.id;
@@ -346,19 +333,11 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      border: 'none', background: 'none',
-                      padding: '8px 16px', fontFamily: 'inherit',
-                      fontSize: '14px', fontWeight: active ? 700 : 500,
-                      cursor: 'pointer', transition: 'all 0.2s',
-                      color: active ? '#ffffff' : 'rgba(255,255,255,0.4)',
-                      position: 'relative'
-                    }}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap relative transition-colors bg-transparent border-none outline-none cursor-pointer ${active ? 'text-white font-bold' : 'text-white/40 font-medium hover:text-white/70'}`}
                   >
-                    <Icon size={16} color={active ? '#00e5ff' : 'currentColor'} />
+                    <Icon size={16} color={active ? '#00e5ff' : 'currentColor'} className="shrink-0" />
                     {tab.label}
-                    {active && <motion.div layoutId="tab" style={{ position: 'absolute', bottom: '-17px', left: 0, right: 0, height: '2px', background: '#00e5ff', boxShadow: '0 0 10px #00e5ff' }} />}
+                    {active && <motion.div layoutId="tab" className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-cyan-400 shadow-[0_0_10px_#22d3ee]" />}
                   </button>
                 );
               })}
@@ -370,11 +349,11 @@ export default function App() {
                 {globalData && (
                   <>
                     {/* HERO SECTION */}
-                    <div style={{ marginBottom: '48px' }}>
-                      <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '24px' }}>
+                    <div className="mb-12">
+                      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-6">
                         {zm.global_score >= 7 ? t.cond_exc : zm.global_score >= 4 ? t.cond_mod : t.cond_poor}
                       </h2>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                         <MetricCard icon={Globe} label={t.global_sky} value={zm.global_score} unit="/ 10" color={zm.global_score >= 7 ? '#00e5ff' : zm.global_score >= 4 ? '#fbbf24' : '#f87171'} delay={0} sub={zm.global_score >= 7 ? t.clear_skies : t.proceed_caution} />
                         <MetricCard icon={Eye} label={t.zenith_seeing} value={zm.seeing_arcsec} unit='"' color="#a78bfa" delay={0.1} sub={t.arcsec_fwhm} />
                         <MetricCard icon={Sparkles} label={t.transparency} value={(zm.transparency * 100).toFixed(0)} unit="%" color="#34d399" delay={0.2} sub={t.atmos_clarity} />
@@ -383,20 +362,21 @@ export default function App() {
                     </div>
 
                     {/* TARGET EXPLORER */}
-                    <div style={{ background: '#171717', border: '1px solid #2a2a2a', borderRadius: '16px', padding: '32px', marginBottom: '32px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+                    <div className="bg-[#171717] border border-[#2a2a2a] rounded-2xl p-5 sm:p-8 mb-8 overflow-hidden">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                         <div>
-                          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{t.target_exp}</h2>
-                          <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{t.physics_trace} ({tzLabel})</p>
+                          <h2 className="m-0 text-lg sm:text-xl font-extrabold">{t.target_exp}</h2>
+                          <p className="m-0 mt-1 text-xs sm:text-sm text-white/40">{t.physics_trace} ({tzLabel})</p>
                         </div>
                         <select value={targetName} onChange={e => setTargetName(e.target.value)}
-                          style={{ background: '#222', border: '1px solid #333', borderRadius: '8px', padding: '10px 16px', color: 'white', fontFamily: 'inherit', fontSize: '14px', fontWeight: 500, outline: 'none', cursor: 'pointer', minWidth: '200px' }}>
-                          {globalData.catalog_names.map(n => <option key={n} value={n} style={{ background: '#050505' }}>{n}</option>)}
+                          className="bg-[#222] border border-[#333] rounded-lg px-4 py-2.5 text-white text-sm font-medium outline-none cursor-pointer w-full sm:w-auto min-w-[200px] appearance-none"
+                        >
+                          {globalData.catalog_names.map(n => <option key={n} value={n} className="bg-[#050505]">{n}</option>)}
                         </select>
                       </div>
                       
                       {forecast && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ height: '360px' }}>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[300px] sm:h-[360px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={forecast} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                               <defs>
