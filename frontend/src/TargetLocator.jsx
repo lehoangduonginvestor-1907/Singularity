@@ -19,7 +19,28 @@ const TargetLocator = ({ onLocationSelect }) => {
   }, []);
 
   const handleSearch = async () => {
-    if (!query.trim()) return;
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    // Check if the query is a raw coordinate pair (e.g. "75.0000, 43.0000" or "75.0 43.0")
+    const coordMatch = trimmedQuery.match(/^([-+]?\d{1,2}(?:\.\d+)?)(?:\s*,\s*|\s+)([-+]?\d{1,3}(?:\.\d+)?)$/);
+    if (coordMatch) {
+      const parsedLat = parseFloat(coordMatch[1]);
+      const parsedLon = parseFloat(coordMatch[2]);
+      
+      // Validate lat/lon ranges
+      if (parsedLat >= -90 && parsedLat <= 90 && parsedLon >= -180 && parsedLon <= 180) {
+        setIsOpen(false);
+        if (onLocationSelect) {
+          onLocationSelect({ 
+            lat: parsedLat, 
+            lon: parsedLon, 
+            name: `[RAW COORDS] LAT: ${parsedLat.toFixed(4)}, LON: ${parsedLon.toFixed(4)}` 
+          });
+        }
+        return; // Bypass Geocoding API completely
+      }
+    }
     
     setIsScanning(true);
     setIsOpen(true);
@@ -62,7 +83,7 @@ const TargetLocator = ({ onLocationSelect }) => {
         <input
           type="text"
           className="flex-1 bg-transparent text-red-500 placeholder-red-900/50 outline-none p-2 focus:ring-0"
-          placeholder="ENTER TARGET COORDINATES OR NAME..."
+          placeholder="ENTER NAME OR COORDS (e.g. 75.0, 43.0)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
