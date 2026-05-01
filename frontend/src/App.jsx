@@ -201,25 +201,48 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.8 }}
-            className="min-h-screen flex flex-col items-center justify-center p-4 bg-black relative overflow-hidden"
+            className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
+            style={{
+              backgroundImage: "url('/src/assets/Anh1.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
           >
-            {/* Subtle background glow */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(220,38,38,0.05)_0%,transparent_70%)] pointer-events-none" />
-            
+            {/* Top Navbar (Glassmorphism) */}
+            <div className="absolute top-4 left-4 right-4 sm:top-6 sm:left-8 sm:right-8 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 flex justify-between items-center z-20">
+              <div className="flex items-center gap-3">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white opacity-80"><path d="M12 2L2 22h20L12 2z"/><path d="M12 2v20"/><path d="M2 22l10-12"/><path d="M22 22l-10-12"/></svg>
+                <span className="text-white font-sans text-lg sm:text-xl font-medium tracking-wide">Project Singularity</span>
+              </div>
+              <div className="flex items-center gap-4 sm:gap-6 text-white/70 font-mono text-xs sm:text-sm">
+                <span>EN / VI</span>
+                <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
+                  <Eye size={14} className="opacity-70" />
+                  <span className="hidden sm:inline">Red Vision</span>
+                  <div className="w-6 h-3 bg-white/20 rounded-full relative ml-1">
+                    <div className="absolute left-0.5 top-0.5 w-2 h-2 bg-white/60 rounded-full" />
+                  </div>
+                  <span className="text-[10px] font-bold">OFF</span>
+                </div>
+              </div>
+            </div>
+
             <motion.div 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2, duration: 1 }}
-              className="text-center z-10 w-full max-w-2xl"
+              className="text-center z-10 w-full max-w-2xl mt-16 sm:mt-0"
             >
-              <h1 className="text-4xl md:text-6xl font-bold tracking-[0.2em] text-red-500 mb-2 font-mono" style={{ textShadow: '0 0 20px rgba(220,38,38,0.4)' }}>
-                PROJECT SINGULARITY
+              <h1 className="text-5xl sm:text-7xl font-extrabold tracking-[0.25em] text-cyan-50 mb-6 font-sans leading-tight" style={{ textShadow: '0 0 30px rgba(6, 182, 212, 0.6), 0 0 60px rgba(6, 182, 212, 0.3)' }}>
+                PROJECT<br/>SINGULARITY
               </h1>
-              <p className="text-red-500/50 tracking-widest text-sm mb-16 font-mono">GLOBAL ASTRO-PHYSICS FORECAST ENGINE</p>
+              <p className="text-white/70 tracking-[0.2em] text-xs sm:text-sm mb-12 font-mono uppercase">
+                Global Astro-Physics Forecast Engine
+              </p>
               
               <TargetLocator onLocationSelect={handleLocationSelect} />
               
-              {error && <p className="text-red-500 mt-8 font-mono animate-pulse">⚠ {error}</p>}
+              {error && <p className="text-red-400 mt-8 font-mono animate-pulse">⚠ {error}</p>}
             </motion.div>
           </motion.div>
         )}

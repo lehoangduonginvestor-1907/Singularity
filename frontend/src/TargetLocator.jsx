@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Lock } from 'lucide-react';
 
 const TargetLocator = ({ onLocationSelect }) => {
   const [query, setQuery] = useState('');
@@ -78,51 +79,53 @@ const TargetLocator = ({ onLocationSelect }) => {
   return (
     <div className="relative font-mono w-full max-w-2xl mx-auto" ref={dropdownRef}>
       {/* Input Group */}
-      <div className="flex items-center border border-red-900/50 bg-[#0a0a0a] p-1">
-        <span className="text-red-600 px-3 opacity-70 animate-pulse">{'>'}</span>
+      <div className="flex items-center border border-cyan-500/40 bg-white/5 backdrop-blur-md rounded-lg p-1 transition-all duration-300 hover:border-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+        <span className="text-cyan-400 px-3 opacity-80 animate-pulse font-bold">{'>'}</span>
         <input
           type="text"
-          className="flex-1 bg-transparent text-red-500 placeholder-red-900/50 outline-none p-2 focus:ring-0"
-          placeholder="ENTER NAME OR COORDS (e.g. 75.0, 43.0)..."
+          className="flex-1 bg-transparent text-cyan-50 placeholder-cyan-200/40 outline-none p-2 focus:ring-0 text-sm tracking-widest"
+          placeholder="ENTER NAME OR COORDS (e.g. 75.6, 48.0)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
+        <div className="h-6 w-px bg-cyan-500/30 mx-2"></div>
         <button
           onClick={handleSearch}
           disabled={isScanning}
-          className={`px-6 py-2 uppercase font-bold tracking-widest transition-colors ${
+          className={`px-4 py-2 uppercase font-bold tracking-widest transition-colors flex items-center gap-2 rounded-md ${
             isScanning 
-              ? 'text-red-400 bg-red-950/30 border-l border-red-900/50 cursor-wait' 
-              : 'text-red-500 hover:bg-red-900/20 hover:text-red-400 border-l border-red-900'
+              ? 'text-cyan-600 cursor-wait' 
+              : 'text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300'
           }`}
         >
-          {isScanning ? 'SCANNING...' : 'LOCK'}
+          <Lock size={16} />
+          {isScanning ? 'SCAN...' : 'LOCK'}
         </button>
       </div>
 
       {/* Dropdown Results */}
       {isOpen && (results.length > 0 || isScanning) && (
-        <div className="absolute top-full left-0 right-0 mt-1 border border-red-900/50 bg-[#0a0a0a] z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 border border-cyan-500/30 bg-[#0a1526]/90 backdrop-blur-xl rounded-lg z-50 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
           {isScanning ? (
-            <div className="p-4 text-red-500/50 text-sm animate-pulse uppercase tracking-widest">
+            <div className="p-4 text-cyan-400/60 text-sm animate-pulse uppercase tracking-widest">
               [ACQUIRING GEOLOCATION DATA...]
             </div>
           ) : (
-            <ul className="max-h-60 overflow-y-auto">
+            <ul className="max-h-60 overflow-y-auto custom-scrollbar">
               {results.map((item) => (
                 <li
                   key={item.place_id}
                   onClick={() => handleSelect(item)}
-                  className="p-3 text-sm text-red-400/80 border-b border-red-900/30 cursor-pointer hover:bg-red-900/20 hover:text-red-400 transition-all"
+                  className="p-3 text-sm text-cyan-100/80 border-b border-cyan-500/10 cursor-pointer hover:bg-cyan-500/20 hover:text-cyan-300 transition-all"
                 >
                   <div className="font-bold tracking-wider truncate uppercase">
                     {item.display_name.split(',')[0]}
                   </div>
-                  <div className="text-xs text-red-900/80 truncate mt-1">
+                  <div className="text-xs text-cyan-400/50 truncate mt-1">
                     {item.display_name}
                   </div>
-                  <div className="text-[10px] text-red-500/40 mt-2 font-mono flex gap-4">
+                  <div className="text-[10px] text-cyan-500/60 mt-2 font-mono flex gap-4">
                     <span>LAT: {parseFloat(item.lat).toFixed(4)}</span>
                     <span>LON: {parseFloat(item.lon).toFixed(4)}</span>
                   </div>
