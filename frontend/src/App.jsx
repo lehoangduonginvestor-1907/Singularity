@@ -215,14 +215,18 @@ export default function App() {
                 <span className="text-white font-sans text-lg sm:text-xl font-medium tracking-wide">Project Singularity</span>
               </div>
               <div className="flex items-center gap-4 sm:gap-6 text-white/70 font-mono text-xs sm:text-sm">
-                <span>EN / VI</span>
-                <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
-                  <Eye size={14} className="opacity-70" />
-                  <span className="hidden sm:inline">Red Vision</span>
-                  <div className="w-6 h-3 bg-white/20 rounded-full relative ml-1">
-                    <div className="absolute left-0.5 top-0.5 w-2 h-2 bg-white/60 rounded-full" />
+                <div className="flex gap-2">
+                  <button onClick={() => setLang('en')} className={`transition-colors ${lang === 'en' ? 'text-white font-bold' : 'hover:text-white'}`}>EN</button>
+                  <span className="opacity-50">/</span>
+                  <button onClick={() => setLang('vi')} className={`transition-colors ${lang === 'vi' ? 'text-white font-bold' : 'hover:text-white'}`}>VI</button>
+                </div>
+                <div onClick={() => setRedVision(!redVision)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${redVision ? 'bg-red-500/20 border-red-500/30 hover:bg-red-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                  {redVision ? <EyeOff size={14} className="text-red-400" /> : <Eye size={14} className="opacity-70" />}
+                  <span className={`hidden sm:inline ${redVision ? 'text-red-300 font-bold' : ''}`}>Red Vision</span>
+                  <div className={`w-6 h-3 rounded-full relative ml-1 transition-colors ${redVision ? 'bg-red-500/50' : 'bg-white/20'}`}>
+                    <div className={`absolute top-0.5 w-2 h-2 rounded-full transition-all ${redVision ? 'bg-red-300 right-0.5 left-auto' : 'bg-white/60 left-0.5 right-auto'}`} />
                   </div>
-                  <span className="text-[10px] font-bold">OFF</span>
+                  <span className={`text-[10px] font-bold ${redVision ? 'text-red-400' : 'text-white/70'}`}>{redVision ? 'ON' : 'OFF'}</span>
                 </div>
               </div>
             </div>
