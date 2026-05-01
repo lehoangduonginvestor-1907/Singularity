@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, ChevronDown, ChevronUp, Droplet, Wind, Eye, Moon, Activity } from 'lucide-react';
+import { formatLocalTime, formatTzLabel } from './utils';
 
 const cardStyle = {
   background: 'rgba(255, 255, 255, 0.02)',
@@ -31,10 +32,11 @@ const Section = ({ title, icon: Icon, children, accent = '#00e5ff' }) => (
   </div>
 );
 
-const HourPanel = ({ row, expanded, onToggle }) => {
-  const sc = row.interstellar_scores;
+const HourPanel = ({ row, expanded, onToggle, lon }) => {
+  const sc = row.singularity_scores;
   const ph = row.physics;
   const bm = row.benchmark_7timer;
+  const localTime = formatLocalTime(row.time, lon);
 
   return (
     <div style={{ ...cardStyle, overflow: 'hidden', marginBottom: '8px' }}>
@@ -42,11 +44,11 @@ const HourPanel = ({ row, expanded, onToggle }) => {
         onClick={onToggle}
         style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', cursor: 'pointer', userSelect: 'none', background: expanded ? 'rgba(255,255,255,0.02)' : 'transparent', transition: 'background 0.2s' }}
       >
-        <span style={{ fontSize: '16px', fontWeight: 800, color: '#00e5ff', fontFamily: 'Roboto Mono', minWidth: '50px' }}>{row.time}</span>
+        <span style={{ fontSize: '16px', fontWeight: 800, color: '#00e5ff', fontFamily: 'Roboto Mono', minWidth: '50px' }}>{localTime}</span>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
           <Tag color={sc.v_model_final >= 7 ? '#34d399' : sc.v_model_final >= 4 ? '#fbbf24' : '#f87171'}>
-            Score: {sc.v_model_final}
+            Score: {sc.v_model_final || sc.final_score}
           </Tag>
           <Tag color="rgba(255,255,255,0.4)">Seeing: {ph.seeing_arcsec}"</Tag>
           {ph.dew_danger && <Tag color="#f87171">⚠ Dew Risk</Tag>}
@@ -130,6 +132,8 @@ export default function DebugConsole({ targetName, lat, lon }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState({});
 
+  const tzLabel = formatTzLabel(lon);
+
   const loadDebug = async () => {
     if (open) {
       setOpen(false);
@@ -174,12 +178,12 @@ export default function DebugConsole({ targetName, lat, lon }) {
             <div style={{ ...cardStyle, padding: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
                 <Terminal size={16} color="rgba(255,255,255,0.5)" />
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Raw Telemetry — {data.target}</span>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Raw Telemetry — {data.target} ({tzLabel})</span>
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {data.debug.map((row, i) => (
-                  <HourPanel key={i} row={row} expanded={!!expanded[i]} onToggle={() => toggle(i)} />
+                  <HourPanel key={i} row={row} expanded={!!expanded[i]} onToggle={() => toggle(i)} lon={lon} />
                 ))}
               </div>
             </div>

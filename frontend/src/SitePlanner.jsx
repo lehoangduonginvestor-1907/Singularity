@@ -152,7 +152,7 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 
   const [error, setError] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [customSpots, setCustomSpots] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("interstellar_custom_spots") || "[]"); }
+    try { return JSON.parse(localStorage.getItem("singularity_custom_spots") || "[]"); }
     catch { return []; }
   });
 

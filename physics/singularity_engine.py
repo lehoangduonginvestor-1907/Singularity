@@ -26,7 +26,6 @@ def phys_engine(target : dict, api : dict, sensor : dict) -> dict:
 
     #air_mass:
     air_mass = abs_air_mass(target["alt_deg"], sensor["pressure_hpa"])
-    air_mass_moon = abs_air_mass(api["moon_alt_deg"], sensor["pressure_hpa"])
     air_warn = air_mass_warning(air_mass)
 
     #scattering:
@@ -74,9 +73,15 @@ def phys_engine(target : dict, api : dict, sensor : dict) -> dict:
 
 
     #lunar_penalty
-    i_moon = lunar_illuminance(api["moon_phase_deg"], air_mass_moon, k_ext)
-    b_moon = sky_brightness_moon(rho_deg, i_moon, air_mass, k_ext)
-    sqm    = b_moon_to_mag(b_moon)
+    if api["moon_alt_deg"] > 0:
+        air_mass_moon = abs_air_mass(api["moon_alt_deg"], sensor["pressure_hpa"])
+        i_moon = lunar_illuminance(api["moon_phase_deg"], air_mass_moon, k_ext)
+        b_moon = sky_brightness_moon(rho_deg, i_moon, air_mass, k_ext)
+        sqm    = b_moon_to_mag(b_moon)
+    else:
+        air_mass_moon = 99.0
+        b_moon = 0.0
+        sqm    = 22.0
 
     return {
         "rho_deg":    rho_deg,

@@ -10,9 +10,9 @@ from astropy.time import Time
 import uvicorn
 
 from ingestion.fetchers import Type1Fetcher, Type2Fetcher
-from physics.engine_orchestrator import InterstellarOrchestrator
+from physics.engine_orchestrator import SingularityOrchestrator
 
-app = FastAPI(title="Interstellar API", version="3.0")
+app = FastAPI(title="Singularity API", version="3.0")
 
 # Setup CORS cho phép React Frontend truy cập
 app.add_middleware(
@@ -148,7 +148,7 @@ def get_tonights_best(lat: float, lon: float, dt_utc: datetime,
         if not bad_sky and mag >= 10.0:       continue
         if rho <= 40.0:                       continue
 
-        payload  = InterstellarOrchestrator.map_and_execute(ephem, atmos_profile, surface_data)
+        payload  = SingularityOrchestrator.map_and_execute(ephem, atmos_profile, surface_data)
         score    = _type_aware_score(payload, ttype)
 
         # Hard veto: dew danger or below horizon
@@ -193,7 +193,7 @@ def get_global_sky(lat: float = Query(...), lon: float = Query(...)):
     ephem_z = AstroHelper.get_ephemeris(lat, lon, current_time, dummy_zenith)
     ephem_z["target_alt"] = 90.0 
     
-    payload_z = InterstellarOrchestrator.map_and_execute(ephem_z, atmos_12h[0]["profile"], surface_12h[0])
+    payload_z = SingularityOrchestrator.map_and_execute(ephem_z, atmos_12h[0]["profile"], surface_12h[0])
     
     # Sử dụng _type_aware_score cho Zenith (Global Score)
     global_score = _type_aware_score(payload_z, "Zenith")
@@ -234,13 +234,13 @@ def get_target_forecast(lat: float = Query(...), lon: float = Query(...), target
     for i in range(12):
         current_time = atmos_12h[i]["time"]
         ephem = AstroHelper.get_ephemeris(lat, lon, current_time, target_row)
-        payload = InterstellarOrchestrator.map_and_execute(ephem, atmos_12h[i]["profile"], surface_12h[i])
+        payload = SingularityOrchestrator.map_and_execute(ephem, atmos_12h[i]["profile"], surface_12h[i])
         
         # Áp dụng logic chấm điểm mới cho từng bước forecast
         score = _type_aware_score(payload, ttype)
         
         forecast.append({
-            "time": current_time.strftime("%H:%M"),
+            "time": current_time.isoformat(),
             "physics_score": round(score, 1),
             "benchmark_score": float(bench_12h[i]["v_model_benchmark"])
         })
@@ -266,7 +266,7 @@ def get_debug_forecast(lat: float = Query(...), lon: float = Query(...), target_
         bench = bench_12h[i]
 
         ephem = AstroHelper.get_ephemeris(lat, lon, current_time, target_row)
-        payload = InterstellarOrchestrator.map_and_execute(ephem, profile, surface)
+        payload = SingularityOrchestrator.map_and_execute(ephem, profile, surface)
 
         rp = payload["raw_physics"]
         sc = payload["scores"]
@@ -285,7 +285,7 @@ def get_debug_forecast(lat: float = Query(...), lon: float = Query(...), target_
 
         debug_rows.append({
             # ── Time & Geometry ──
-            "time": current_time.strftime("%H:%M"),
+            "time": current_time.isoformat(),
             "target_alt_deg": round(float(ephem["target_alt"]), 2),
             "target_az_deg": round(float(ephem["target_az"]), 2),
             "moon_alt_deg": round(float(ephem["moon_alt"]), 2),
@@ -315,8 +315,8 @@ def get_debug_forecast(lat: float = Query(...), lon: float = Query(...), target_
                 "dew_danger": bool(al["dew_danger"]),
             },
 
-            # ── Heuristic Scores (Interstellar) ──
-            "interstellar_scores": {
+            # ── Heuristic Scores (Singularity) ──
+            "singularity_scores": {
                 "seeing_score": round(float(sc["seeing_score_10"]), 2),
                 "transparency_score": round(float(sc["transparency_score_10"]), 2),
                 "lunar_penalty_applied": round(max(0, (21.0 if str(target_row["Type"]) in _DSO_TYPES else 17.5 if str(target_row["Type"]) in _PLANET_TYPES else 19.0) - rp["sqm"]) * (2.0 if str(target_row["Type"]) in _DSO_TYPES else 0.3 if str(target_row["Type"]) in _PLANET_TYPES else 1.0), 2),
@@ -336,7 +336,7 @@ def get_debug_forecast(lat: float = Query(...), lon: float = Query(...), target_
             "delta": {
                 "score_diff": round(float(sc["v_model_10"]) - float(bench["v_model_benchmark"]), 2),
                 "interpretation": (
-                    "Interstellar significantly more optimistic"
+                    "Singularity significantly more optimistic"
                     if float(sc["v_model_10"]) - float(bench["v_model_benchmark"]) > 2
                     else "7Timer more optimistic"
                     if float(bench["v_model_benchmark"]) - float(sc["v_model_10"]) > 2
@@ -409,7 +409,7 @@ def get_gear_check(
     dummy = pd.Series({"Name": "Zenith", "RA": 0.0, "Dec": 0.0, "Type": "Zenith", "Magnitude": 0.0})
     ephem_z = AstroHelper.get_ephemeris(lat, lon, atmos[0]["time"], dummy)
     ephem_z["target_alt"] = 90.0
-    payload = InterstellarOrchestrator.map_and_execute(ephem_z, atmos[0]["profile"], surface[0])
+    payload = SingularityOrchestrator.map_and_execute(ephem_z, atmos[0]["profile"], surface[0])
     seeing = float(payload["raw_physics"]["seeing_arcsec"])
 
     # ── Optical limits ──────────────────────────────────────────────────────
@@ -615,7 +615,7 @@ def _fetch_and_score_site(site: dict, user_lat: float, user_lon: float,
         ephem = AstroHelper.get_ephemeris(site["lat"], site["lon"], atmos[0]["time"], dummy)
         ephem["target_alt"] = 90.0
 
-        payload = InterstellarOrchestrator.map_and_execute(ephem, atmos[0]["profile"], surface[0])
+        payload = SingularityOrchestrator.map_and_execute(ephem, atmos[0]["profile"], surface[0])
         v_model  = float(payload["scores"]["v_model_10"])
         delta_t  = float(payload["raw_physics"]["delta_t"])
 

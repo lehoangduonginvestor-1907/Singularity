@@ -34,11 +34,8 @@ def dew_point(temp_c: float, rh_percent: float) -> float:
     Source: Lawrence (2005), BAMS 86(2):225
     """
     # TODO: Validate rh_percent trong (0, 100]
-    # Neu rh_percent <= 0: raise ValueError
-    # Neu rh_percent > 100: raise ValueError
-
-    if rh_percent <= 0 or rh_percent > 100:
-        raise ValueError(f"Invalid parameters : rh_percent = {rh_percent}. Must be in [0, 100)")
+    # Neu rh_percent <= 0 hoac > 100: clip lai de tranh loi
+    rh_percent = float(np.clip(rh_percent, 0.1, 100.0))
 
 
     # TODO: Tinh gamma = (MAGNUS_A * temp_c) / (MAGNUS_B + temp_c) + np.log(rh_percent / 100.0)
@@ -133,8 +130,7 @@ def radiative_cooling_estimate(cloud_cover_percent: float) -> float:
         Ham nay chi dung khi MLX90614 chua san sang.
     """
     # TODO: Validate cloud_cover_percent trong [0, 100]
-    if cloud_cover_percent < 0 or cloud_cover_percent > 100:
-        raise ValueError(f"Invalid parameters : cloud_cover_percent = {cloud_cover_percent}. Must be in [0, 100]")
+    cloud_cover_percent = float(np.clip(cloud_cover_percent, 0.0, 100.0))
 
     # TODO: Noi suy tuyen tinh:
     # cloud = 0%   --> dt_rad = 5.0 C (quang may hoan toan)

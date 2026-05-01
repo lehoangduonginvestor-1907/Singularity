@@ -66,7 +66,7 @@ def get_gear_check(
     dummy = pd.Series({"Name": "Zenith", "RA": 0.0, "Dec": 0.0, "Type": "Zenith", "Magnitude": 0.0})
     ephem_z = AstroHelper.get_ephemeris(lat, lon, atmos[0]["time"], dummy)
     ephem_z["target_alt"] = 90.0
-    payload = InterstellarOrchestrator.map_and_execute(ephem_z, atmos[0]["profile"], surface[0])
+    payload = SingularityOrchestrator.map_and_execute(ephem_z, atmos[0]["profile"], surface[0])
     seeing = float(payload["raw_physics"]["seeing_arcsec"])
     rayleigh = _math.degrees(1.22 * 550e-9 / (aperture_mm/1000.0)) * 3600
     dawes = 116.0 / aperture_mm

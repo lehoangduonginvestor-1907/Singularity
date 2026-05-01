@@ -1,5 +1,5 @@
 """
-Interstellar Data Collector
+Singularity Data Collector
 ============================
 Chạy độc lập (không cần FastAPI). Được gọi bởi GitHub Actions mỗi giờ.
 
@@ -25,7 +25,7 @@ from datetime import datetime, timezone, timedelta
 # ─── Thiết lập import physics engine ─────────────────────────────────────────
 # Script chạy từ thư mục gốc của project
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from physics.engine_orchestrator import InterstellarOrchestrator
+from physics.engine_orchestrator import SingularityOrchestrator
 from ingestion.fetchers import Type2Fetcher
 
 import astropy.units as u
@@ -245,7 +245,7 @@ def compute_row(lat: float, lon: float, entry: dict, benchmark_data: dict = None
     moon    = get_moon_ephemeris(lat, lon, t_utc)
     ephem_z = build_zenith_ephem(lat, lon, t_utc, moon)
 
-    payload = InterstellarOrchestrator.map_and_execute(ephem_z, profile, surface)
+    payload = SingularityOrchestrator.map_and_execute(ephem_z, profile, surface)
     rp = payload["raw_physics"]
     sc = payload["scores"]
     al = payload["alerts"]
@@ -369,7 +369,7 @@ def run_collector():
 
 
 def main():
-    log.info(f"=== Interstellar Collector DAEMON START === Interval: {SLEEP_INTERVAL}s")
+    log.info(f"=== Singularity Collector DAEMON START === Interval: {SLEEP_INTERVAL}s")
     while True:
         try:
             run_collector()

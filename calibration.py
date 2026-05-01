@@ -1,5 +1,5 @@
 """
-calibration.py — Interstellar Physics Calibration Tool
+calibration.py — Singularity Physics Calibration Tool
 =======================================================
 So sánh SQM model (Krisciunas-Schaefer) vs SQM đo thực tế từ TSL2591
 để tính correction cho các hằng số trong physics engine.
@@ -108,7 +108,7 @@ def run_calibration(csv_path: str, lat: float = 20.886355, lon: float = 105.7557
     """
     Đọc sensor CSV, tính SQM model vs measured, phân tích delta.
 
-    Columns cần có trong CSV (interstellar_master_v4.csv format):
+    Columns cần có trong CSV (singularity_master_v4.csv format):
         Timestamp, ESP_T, ESP_Hum, ESP_Press, ESP_Norm, ESP_Gain,
         ESP_T_Sky, ESP_T_Am, OM_Temp, OM_Hum, OM_Cloud, OM_Wind,
         Moon_Alt, Moon_Az, Moon_Phase
@@ -249,7 +249,7 @@ def run_calibration(csv_path: str, lat: float = 20.886355, lon: float = 105.7557
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Interstellar Calibration Tool")
+    parser = argparse.ArgumentParser(description="Singularity Calibration Tool")
     parser.add_argument("--csv",  required=True, help="Đường dẫn đến file sensor CSV")
     parser.add_argument("--lat",  type=float, default=20.886355)
     parser.add_argument("--lon",  type=float, default=105.755763)

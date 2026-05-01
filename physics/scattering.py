@@ -60,12 +60,10 @@ def hygroscopic_growth(rh_percent: float, gamma: float = 0.5) -> float:
     Source: Shettle & Fenn (1979), Applied Optics 18(3):330
     """
     # Validate rh_percent phai trong [0, 100)
-    # Neu rh_percent >= 100: raise ValueError
+    # Neu rh_percent >= 100: clip to 99.0
     # (tranh chia cho 0 trong cong thuc)
 
-
-    if rh_percent > 99 :
-        raise ValueError(f"Invalid parameters : rh_percent = {rh_percent}. Must be in [0, 99]")
+    rh_percent = float(np.clip(rh_percent, 0.0, 99.0))
 
     # Tinh f_rh = (1 / (1 - rh_percent/100)) ^ gamma
 

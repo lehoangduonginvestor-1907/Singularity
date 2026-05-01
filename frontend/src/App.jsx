@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import { MapPin, Target, Eye, EyeOff, Sparkles, Navigation } from 'lucide-react';
+import { MapPin, Target, Eye, EyeOff, Sparkles, Navigation, Globe } from 'lucide-react';
 import DebugConsole from './DebugConsole';
 import VisibilityWindow from './VisibilityWindow';
 import GearPanel from './GearPanel';
 import SitePlanner from './SitePlanner';
+import { DICT, formatLocalTime, formatTzLabel } from './utils';
 
 /* ─── METRIC CARD ────────────────────────────────────────────────────────── */
 const MetricCard = ({ label, value, unit = '', color = '#00e5ff', sub = '', highlight = false, delay = 0 }) => (
@@ -34,11 +35,11 @@ const MetricCard = ({ label, value, unit = '', color = '#00e5ff', sub = '', high
 );
 
 /* ─── TOOLTIP ────────────────────────────────────────────────────────────── */
-const ChartTooltip = ({ active, payload, label }) => {
+const ChartTooltip = ({ active, payload, label, tzLabel }) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: 'rgba(5,5,5,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 16px' }}>
-      <p style={{ margin: '0 0 10px', fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'Roboto Mono' }}>{label} UTC</p>
+      <p style={{ margin: '0 0 10px', fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'Roboto Mono' }}>{label} {tzLabel}</p>
       {payload.map((p, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i < payload.length - 1 ? '6px' : 0 }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: p.color, boxShadow: `0 0 8px ${p.color}` }} />
@@ -51,12 +52,15 @@ const ChartTooltip = ({ active, payload, label }) => {
 };
 
 /* ─── MAIN APP ───────────────────────────────────────────────────────────── */
-const TABS = [
-  { id: 'dashboard', label: 'Layer 1: Dashboard', icon: Target },
-  { id: 'planner',   label: 'Site Planner', icon: Navigation },
-];
-
 export default function App() {
+  const [lang, setLang] = useState('en');
+  const t = DICT[lang];
+
+  const TABS = [
+    { id: 'dashboard', label: t.tab_dash, icon: Target },
+    { id: 'planner',   label: t.tab_plan, icon: Navigation },
+  ];
+
   const [lat, setLat] = useState(20.886355);
   const [lon, setLon] = useState(105.755763);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -66,6 +70,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [redVision, setRedVision] = useState(false);
+
+  const tzLabel = formatTzLabel(lon);
 
   const scan = async () => {
     setLoading(true); setError('');
@@ -84,7 +90,11 @@ export default function App() {
     try {
       const r = await fetch(`${import.meta.env.VITE_API_URL}/api/target-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(name)}`);
       const d = await r.json();
-      setForecast(d.forecast);
+      const localForecast = d.forecast.map(item => ({
+        ...item,
+        localTime: formatLocalTime(item.time, lon)
+      }));
+      setForecast(localForecast);
     } catch(e) { console.error(e); }
   };
 
@@ -101,12 +111,18 @@ export default function App() {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Sparkles color="#a78bfa" size={28} /> Project Interstellar
+              <Sparkles color="#a78bfa" size={28} /> {t.app_title}
             </h1>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: '0.05em' }}>OBSERVATORY DIAGNOSTICS & FORECAST</p>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: '0.05em' }}>{t.app_sub}</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {/* Language Switcher */}
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+              <button onClick={() => setLang('en')} style={{ padding: '8px 12px', background: lang === 'en' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'en' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>EN</button>
+              <button onClick={() => setLang('vi')} style={{ padding: '8px 12px', background: lang === 'vi' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'vi' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>VI</button>
+            </div>
+
             <button
               onClick={() => setRedVision(!redVision)}
               style={{
@@ -118,7 +134,7 @@ export default function App() {
               }}
             >
               {redVision ? <EyeOff size={16} /> : <Eye size={16} />}
-              Red Vision
+              {t.red_vision}
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '8px 12px' }}>
               <MapPin size={16} color="rgba(255,255,255,0.4)" />
@@ -127,7 +143,7 @@ export default function App() {
               <input type="number" value={lon} onChange={e=>setLon(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '70px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
             </div>
             <button onClick={scan} disabled={loading} style={{ background: 'linear-gradient(135deg, #00e5ff, #3b82f6)', border: 'none', borderRadius: '12px', color: '#000', padding: '10px 24px', fontSize: '13px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer', boxShadow: '0 4px 20px rgba(0,229,255,0.2)' }}>
-              {loading ? 'SCANNING...' : 'SYNC'}
+              {loading ? t.scanning : t.sync}
             </button>
           </div>
         </header>
@@ -169,13 +185,13 @@ export default function App() {
                 {/* HERO SECTION */}
                 <div style={{ marginBottom: '48px' }}>
                   <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '24px' }}>
-                    {zm.global_score >= 7 ? 'Conditions are excellent tonight.' : zm.global_score >= 4 ? 'Conditions are moderate tonight.' : 'Conditions are poor tonight.'}
+                    {zm.global_score >= 7 ? t.cond_exc : zm.global_score >= 4 ? t.cond_mod : t.cond_poor}
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                    <MetricCard label="Global Sky Score" value={zm.global_score} unit="/ 10" color={zm.global_score >= 7 ? '#00e5ff' : zm.global_score >= 4 ? '#fbbf24' : '#f87171'} highlight delay={0} sub={zm.global_score >= 7 ? 'Clear skies ahead' : 'Proceed with caution'} />
-                    <MetricCard label="Zenith Seeing" value={zm.seeing_arcsec} unit='"' color="#a78bfa" delay={0.1} sub="Arc-seconds FWHM" />
-                    <MetricCard label="Transparency" value={(zm.transparency * 100).toFixed(0)} unit="%" color="#34d399" delay={0.2} sub="Atmospheric clarity" />
-                    <MetricCard label="Dew Risk" value={zm.dew_danger ? 'DANGER' : 'SAFE'} color={zm.dew_danger ? '#f87171' : '#34d399'} delay={0.3} sub={zm.dew_danger ? '⚠ Condensation risk' : '✓ Lens protected'} />
+                    <MetricCard label={t.global_sky} value={zm.global_score} unit="/ 10" color={zm.global_score >= 7 ? '#00e5ff' : zm.global_score >= 4 ? '#fbbf24' : '#f87171'} highlight delay={0} sub={zm.global_score >= 7 ? t.clear_skies : t.proceed_caution} />
+                    <MetricCard label={t.zenith_seeing} value={zm.seeing_arcsec} unit='"' color="#a78bfa" delay={0.1} sub={t.arcsec_fwhm} />
+                    <MetricCard label={t.transparency} value={(zm.transparency * 100).toFixed(0)} unit="%" color="#34d399" delay={0.2} sub={t.atmos_clarity} />
+                    <MetricCard label={t.dew_risk} value={zm.dew_danger ? t.danger : t.safe} color={zm.dew_danger ? '#f87171' : '#34d399'} delay={0.3} sub={zm.dew_danger ? t.cond_risk : t.lens_protected} />
                   </div>
                 </div>
 
@@ -183,8 +199,8 @@ export default function App() {
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '32px', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
-                      <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>Target Explorer</h2>
-                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>12-hour physics forecast trace</p>
+                      <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{t.target_exp}</h2>
+                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{t.physics_trace} ({tzLabel})</p>
                     </div>
                     <select value={targetName} onChange={e => setTargetName(e.target.value)}
                       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 20px', color: 'white', fontFamily: 'inherit', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer', minWidth: '240px', appearance: 'none' }}>
@@ -206,11 +222,11 @@ export default function App() {
                               <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <XAxis dataKey="time" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11, fontFamily: 'Roboto Mono' }} axisLine={{ stroke: 'rgba(255,255,255,0.05)' }} tickLine={false} />
+                          <XAxis dataKey="localTime" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11, fontFamily: 'Roboto Mono' }} axisLine={{ stroke: 'rgba(255,255,255,0.05)' }} tickLine={false} />
                           <YAxis domain={[0,10]} stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11, fontFamily: 'Roboto Mono' }} axisLine={false} tickLine={false} />
-                          <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
-                          <Area type="monotone" dataKey="physics_score" name="Interstellar Score" stroke="#00e5ff" strokeWidth={3} fill="url(#gPhysics)" dot={false} activeDot={{ r: 6, fill: '#00e5ff', stroke: '#000', strokeWidth: 2 }} />
-                          <Area type="monotone" dataKey="benchmark_score" name="7Timer Benchmark" stroke="#a78bfa" strokeWidth={2} strokeDasharray="6 6" fill="url(#gBench)" dot={false} />
+                          <Tooltip content={<ChartTooltip tzLabel={tzLabel} />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
+                          <Area type="monotone" dataKey="physics_score" name={t.physics_score} stroke="#00e5ff" strokeWidth={3} fill="url(#gPhysics)" dot={false} activeDot={{ r: 6, fill: '#00e5ff', stroke: '#000', strokeWidth: 2 }} />
+                          <Area type="monotone" dataKey="benchmark_score" name={t.bench_score} stroke="#a78bfa" strokeWidth={2} strokeDasharray="6 6" fill="url(#gBench)" dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </motion.div>

@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-directory = r'c:\Users\Admin\Documents\New folder\interstellar_web\physics'
+directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'physics')
 files = ['air_mass.py', 'geometry.py', 'scattering.py', 'thermodynamics.py', 'turbulence.py', 'lunar_penalty.py']
 
 for f in files:

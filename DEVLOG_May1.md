@@ -1,4 +1,4 @@
-# Project Interstellar — Dev Log (May 1, 2026)
+# Project Singularity — Dev Log (May 1, 2026)
 
 ## 🚀 Architectural & Data Pipeline Upgrades
 
@@ -35,7 +35,7 @@ Giao diện React/Vite cũ đã được "đập đi xây lại" hoàn toàn, ch
 
 ## 🎯 Đề Xuất 3 Công Việc Tiếp Theo (Next Steps)
 
-Dựa trên nền tảng vững chắc hiện tại, dưới đây là 3 hướng đi chiến lược tiếp theo để đưa Project Interstellar lên mức độ hoàn thiện cuối cùng:
+Dựa trên nền tảng vững chắc hiện tại, dưới đây là 3 hướng đi chiến lược tiếp theo để đưa Project Singularity lên mức độ hoàn thiện cuối cùng:
 
 **1. Data Science & Model Fine-Tuning (Hiệu chỉnh thuật toán V-Model)**
    - *Hành động:* Thu thập dữ liệu thực tế từ ESP32 trong 1-2 tuần. Dùng Python (Pandas/Scikit-learn) để join (gộp) bảng `raw_sensor` và `raw_data`. 

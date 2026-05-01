@@ -8,9 +8,9 @@ from astropy.time import Time
 import plotly.express as px
 
 from ingestion.fetchers import Type1Fetcher, Type2Fetcher
-from physics.engine_orchestrator import InterstellarOrchestrator
+from physics.engine_orchestrator import SingularityOrchestrator
 
-st.set_page_config(page_title="Interstellar Forecast V3", layout="wide", page_icon="🔭")
+st.set_page_config(page_title="Singularity Forecast V3", layout="wide", page_icon="🔭")
 
 # ==========================================
 # 1. DATA LAYER (MOCK CATALOG)
@@ -131,7 +131,7 @@ def get_tonights_best(df_catalog: pd.DataFrame, lat: float, lon: float, dt_utc: 
             continue
             
         # Chạy Core Physics Engine cho Mục tiêu thỏa mãn
-        payload = InterstellarOrchestrator.map_and_execute(ephem, atmos_profile, surface_data)
+        payload = SingularityOrchestrator.map_and_execute(ephem, atmos_profile, surface_data)
         v_model = payload["scores"]["v_model_10"]
         
         best_targets.append({
@@ -156,7 +156,7 @@ if 'local_offset' not in st.session_state:
 df_catalog = get_mock_catalog()
 
 with st.sidebar:
-    st.title("🔭 Interstellar V3")
+    st.title("🔭 Singularity V3")
     st.header("⚙️ Configuration")
     lat = st.number_input("Latitude", value=20.886355, format="%.4f")
     lon = st.number_input("Longitude", value=105.755763, format="%.4f")
@@ -183,7 +183,7 @@ if run_btn or 'atmos_12h' in st.session_state:
     dummy_zenith = pd.Series({"Name": "Zenith", "RA": 0.0, "Dec": 0.0, "Type": "Zenith"})
     ephem_z = AstroHelper.get_ephemeris(lat, lon, current_time, dummy_zenith)
     ephem_z["target_alt"] = 90.0 # Bắt buộc Zenith
-    payload_z = InterstellarOrchestrator.map_and_execute(ephem_z, atmos_12h[0]["profile"], surface_12h[0])
+    payload_z = SingularityOrchestrator.map_and_execute(ephem_z, atmos_12h[0]["profile"], surface_12h[0])
     global_score = np.clip(payload_z["scores"]["v_model_10"] + st.session_state.local_offset, 0.0, 10.0)
     
     # TOP DASHBOARD
@@ -236,25 +236,25 @@ if run_btn or 'atmos_12h' in st.session_state:
         # LOGIC LAYER: Mode 2 (Target Specific)
         for i in range(12):
             ephem = AstroHelper.get_ephemeris(lat, lon, times[i], target_row)
-            payload = InterstellarOrchestrator.map_and_execute(ephem, atmos_12h[i]["profile"], surface_12h[i])
+            payload = SingularityOrchestrator.map_and_execute(ephem, atmos_12h[i]["profile"], surface_12h[i])
             final_score = np.clip(payload["scores"]["v_model_10"] + st.session_state.local_offset, 0.0, 10.0)
             v_model_scores.append(final_score)
             bench_scores.append(bench_12h[i]["v_model_benchmark"])
             
         df_chart = pd.DataFrame({
             "Time": times,
-            "Interstellar (Physics)": v_model_scores,
+            "Singularity (Physics)": v_model_scores,
             "7Timer (Benchmark)": bench_scores
         })
         
         fig = px.line(
             df_chart, 
             x="Time", 
-            y=["Interstellar (Physics)", "7Timer (Benchmark)"],
+            y=["Singularity (Physics)", "7Timer (Benchmark)"],
             title=f"12-Hour Forecast: {target_name}",
             labels={"value": "V_Model Score (0-10)", "variable": "Mô hình", "Time": "Thời gian (UTC)"},
             color_discrete_map={
-                "Interstellar (Physics)": "#00E676", # Màu xanh lục nổi bật
+                "Singularity (Physics)": "#00E676", # Màu xanh lục nổi bật
                 "7Timer (Benchmark)": "#29B6F6" # Màu xanh dương
             }
         )

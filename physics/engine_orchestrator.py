@@ -1,8 +1,8 @@
 import numpy as np
-from .interstellar_engine import phys_engine
+from .singularity_engine import phys_engine
 from .geometry import eq_to_altaz
 
-class InterstellarOrchestrator:
+class SingularityOrchestrator:
     @staticmethod
     def map_and_execute(ephemeris_data, atmos_profile, surface_data):
         """
@@ -33,7 +33,7 @@ class InterstellarOrchestrator:
             ephemeris_data['lat'], 
             ephemeris_data['moon_ha']
         )
-        moon_alt = max(0.001, float(moon_alt))
+        moon_alt = float(moon_alt)
         
         # Map 'sensor' data (Mô phỏng IoT Sensor)
         sensor = {
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         'pressure': 1013.25, 'temp': 25.0, 'rh': 80.0, 'aqi': 50.0, 'cloud_cover': 0.0, 't_lens_c': 22.0
     }
     
-    payload = InterstellarOrchestrator.map_and_execute(ephemeris_mock, atmos_mock, surface_mock)
+    payload = SingularityOrchestrator.map_and_execute(ephemeris_mock, atmos_mock, surface_mock)
     print("=== ORCHESTRATOR PAYLOAD ===")
     print(f"V_Model Score: {payload['scores']['v_model_10']:.2f} / 10")
     print(f"Seeing: {payload['raw_physics']['seeing_arcsec']:.2f}\" (Score: {payload['scores']['seeing_score_10']:.1f})")
