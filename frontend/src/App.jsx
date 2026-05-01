@@ -6,6 +6,7 @@ import DebugConsole from './DebugConsole';
 import VisibilityWindow from './VisibilityWindow';
 import GearPanel from './GearPanel';
 import SitePlanner from './SitePlanner';
+import TargetLocator from './TargetLocator';
 import { DICT, formatLocalTime, formatTzLabel } from './utils';
 
 /* ─── METRIC CARD ────────────────────────────────────────────────────────── */
@@ -85,6 +86,14 @@ export default function App() {
     setLoading(false);
   };
 
+  const handleLocationSelect = (loc) => {
+    setLat(loc.lat);
+    setLon(loc.lon);
+    // Optional: Auto-trigger scan could be added here, 
+    // but user can just rely on the sync button or we can trigger it in useEffect.
+    // For now, state updates will be picked up when clicking Sync.
+  };
+
   const fetchForecast = async (name) => {
     if (!name) return;
     try {
@@ -108,43 +117,44 @@ export default function App() {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}>
 
         {/* ── HEADER ── */}
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Sparkles color="#a78bfa" size={28} /> {t.app_title}
-            </h1>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: '0.05em' }}>{t.app_sub}</p>
+        <header style={{ display: 'flex', flexDirection: 'column', marginBottom: '40px', gap: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Sparkles color="#a78bfa" size={28} /> {t.app_title}
+              </h1>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: '0.05em' }}>{t.app_sub}</p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Language Switcher */}
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <button onClick={() => setLang('en')} style={{ padding: '8px 12px', background: lang === 'en' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'en' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>EN</button>
+                <button onClick={() => setLang('vi')} style={{ padding: '8px 12px', background: lang === 'vi' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'vi' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>VI</button>
+              </div>
+
+              <button
+                onClick={() => setRedVision(!redVision)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  background: redVision ? 'rgba(248,113,113,0.1)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${redVision ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                  color: redVision ? '#f87171' : 'rgba(255,255,255,0.6)',
+                  borderRadius: '12px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.3s'
+                }}
+              >
+                {redVision ? <EyeOff size={16} /> : <Eye size={16} />}
+                {t.red_vision}
+              </button>
+              
+              <button onClick={scan} disabled={loading} style={{ background: 'linear-gradient(135deg, #00e5ff, #3b82f6)', border: 'none', borderRadius: '12px', color: '#000', padding: '10px 24px', fontSize: '13px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer', boxShadow: '0 4px 20px rgba(0,229,255,0.2)' }}>
+                {loading ? t.scanning : t.sync}
+              </button>
+            </div>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            {/* Language Switcher */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-              <button onClick={() => setLang('en')} style={{ padding: '8px 12px', background: lang === 'en' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'en' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>EN</button>
-              <button onClick={() => setLang('vi')} style={{ padding: '8px 12px', background: lang === 'vi' ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: lang === 'vi' ? '#fff' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>VI</button>
-            </div>
-
-            <button
-              onClick={() => setRedVision(!redVision)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                background: redVision ? 'rgba(248,113,113,0.1)' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${redVision ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                color: redVision ? '#f87171' : 'rgba(255,255,255,0.6)',
-                borderRadius: '12px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.3s'
-              }}
-            >
-              {redVision ? <EyeOff size={16} /> : <Eye size={16} />}
-              {t.red_vision}
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '8px 12px' }}>
-              <MapPin size={16} color="rgba(255,255,255,0.4)" />
-              <input type="number" value={lat} onChange={e=>setLat(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '70px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
-              <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
-              <input type="number" value={lon} onChange={e=>setLon(parseFloat(e.target.value))} style={{ background: 'none', border: 'none', outline: 'none', color: 'white', width: '70px', fontFamily: 'Roboto Mono', fontSize: '13px' }} />
-            </div>
-            <button onClick={scan} disabled={loading} style={{ background: 'linear-gradient(135deg, #00e5ff, #3b82f6)', border: 'none', borderRadius: '12px', color: '#000', padding: '10px 24px', fontSize: '13px', fontWeight: 800, cursor: loading ? 'wait' : 'pointer', boxShadow: '0 4px 20px rgba(0,229,255,0.2)' }}>
-              {loading ? t.scanning : t.sync}
-            </button>
+          
+          <div style={{ marginTop: '10px', width: '100%', zIndex: 50 }}>
+            <TargetLocator onLocationSelect={handleLocationSelect} />
           </div>
         </header>
 
