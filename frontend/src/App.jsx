@@ -106,28 +106,41 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [redVision, setRedVision] = useState(false);
+  const [scanMessage, setScanMessage] = useState('CALCULATING ATMOSPHERIC PHYSICS...');
 
   const tzLabel = formatTzLabel(lon);
 
-  const scan = async (scanLat, scanLon) => {
+  const scan = async (scanLat, scanLon, retries = 2) => {
     setLoading(true); setError('');
-    try {
-      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/global-sky?lat=${scanLat}&lon=${scanLon}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const d = await r.json();
-      setGlobalData(d);
-      if (d.catalog_names?.length && !targetName) setTargetName(d.catalog_names[0]);
-      
-      // Delay slightly for smooth transition
-      setTimeout(() => {
-        setViewState('dashboard');
-        setLoading(false);
-      }, 1000);
-      
-    } catch(e) { 
-      setError(`Backend error: ${e.message}`); 
-      setViewState('landing');
-      setLoading(false);
+    setScanMessage('CALCULATING ATMOSPHERIC PHYSICS...');
+    
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        if (attempt > 0) {
+          setScanMessage(`RE-ESTABLISHING LINK... (ATTEMPT ${attempt + 1})`);
+          await new Promise(res => setTimeout(res, 1500 * attempt));
+        }
+        const r = await fetch(`${import.meta.env.VITE_API_URL}/api/global-sky?lat=${scanLat}&lon=${scanLon}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        setGlobalData(d);
+        if (d.catalog_names?.length && !targetName) setTargetName(d.catalog_names[0]);
+        
+        // Delay slightly for smooth transition
+        setTimeout(() => {
+          setViewState('dashboard');
+          setLoading(false);
+        }, 1000);
+        return; // Break out of loop on success
+      } catch(e) { 
+        if (attempt === retries) {
+          setError(`Backend error: ${e.message} (Max retries reached. Server might be asleep.)`); 
+          setViewState('landing');
+          setLoading(false);
+        } else {
+          console.warn(`Scan attempt ${attempt + 1} failed, retrying...`);
+        }
+      }
     }
   };
 
@@ -143,17 +156,28 @@ export default function App() {
     scan(lat, lon);
   };
 
-  const fetchForecast = async (name) => {
+  const fetchForecast = async (name, retries = 2) => {
     if (!name) return;
-    try {
-      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/target-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(name)}`);
-      const d = await r.json();
-      const localForecast = d.forecast.map(item => ({
-        ...item,
-        localTime: formatLocalTime(item.time, lon)
-      }));
-      setForecast(localForecast);
-    } catch(e) { console.error(e); }
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        if (attempt > 0) await new Promise(res => setTimeout(res, 1500 * attempt));
+        const r = await fetch(`${import.meta.env.VITE_API_URL}/api/target-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(name)}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        const localForecast = d.forecast.map(item => ({
+          ...item,
+          localTime: formatLocalTime(item.time, lon)
+        }));
+        setForecast(localForecast);
+        return;
+      } catch(e) { 
+        if (attempt === retries) {
+          console.error('Failed to fetch forecast:', e);
+        } else {
+          console.warn(`Forecast fetch attempt ${attempt + 1} failed, retrying...`);
+        }
+      }
+    }
   };
 
   useEffect(() => { 
