@@ -199,6 +199,7 @@ def get_global_sky(lat: float = Query(...), lon: float = Query(...)):
     global_score = _type_aware_score(payload_z, "Zenith")
     zenith_trans = float(payload_z["raw_physics"]["transparency"])
     seeing_arcsec = float(payload_z["raw_physics"]["seeing_arcsec"])
+    sqm = float(payload_z["raw_physics"]["sqm"])
     dew_danger = bool(payload_z["alerts"]["dew_danger"])
     
     best_targets = get_tonights_best(
@@ -212,6 +213,7 @@ def get_global_sky(lat: float = Query(...), lon: float = Query(...)):
             "global_score": round(global_score, 1),
             "seeing_arcsec": round(seeing_arcsec, 2),
             "transparency": round(zenith_trans, 2),
+            "sqm": round(sqm, 2),
             "dew_danger": dew_danger
         },
         "tonights_best": best_targets,

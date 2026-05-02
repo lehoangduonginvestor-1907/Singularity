@@ -353,11 +353,12 @@ export default function App() {
                       <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-6">
                         {zm.global_score >= 7 ? t.cond_exc : zm.global_score >= 4 ? t.cond_mod : t.cond_poor}
                       </h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                         <MetricCard icon={Globe} label={t.global_sky} value={zm.global_score} unit="/ 10" color={zm.global_score >= 7 ? '#00e5ff' : zm.global_score >= 4 ? '#fbbf24' : '#f87171'} delay={0} sub={zm.global_score >= 7 ? t.clear_skies : t.proceed_caution} />
                         <MetricCard icon={Eye} label={t.zenith_seeing} value={zm.seeing_arcsec} unit='"' color="#a78bfa" delay={0.1} sub={t.arcsec_fwhm} />
                         <MetricCard icon={Sparkles} label={t.transparency} value={(zm.transparency * 100).toFixed(0)} unit="%" color="#34d399" delay={0.2} sub={t.atmos_clarity} />
-                        <MetricCard icon={Target} label={t.dew_risk} value={zm.dew_danger ? t.danger : t.safe} color={zm.dew_danger ? '#f87171' : '#34d399'} delay={0.3} sub={zm.dew_danger ? t.cond_risk : t.lens_protected} />
+                        <MetricCard icon={Navigation} label={t.sqm_darkness} value={zm.sqm?.toFixed(2) || '21.00'} unit={t.mag_arcsec2} color="#facc15" delay={0.3} sub={`Bortle ${zm.sqm > 21.7 ? 1 : zm.sqm > 21.5 ? 2 : zm.sqm > 21.3 ? 3 : zm.sqm > 20.8 ? 4 : 5}`} />
+                        <MetricCard icon={Target} label={t.dew_risk} value={zm.dew_danger ? t.danger : t.safe} color={zm.dew_danger ? '#f87171' : '#34d399'} delay={0.4} sub={zm.dew_danger ? t.cond_risk : t.lens_protected} />
                       </div>
                     </div>
 
