@@ -657,7 +657,12 @@ def rank_sites(
         moon_phase_deg = 90.0  # Fallback: quarter moon
 
     # Merge database sites + custom spots
-    all_sites = list(_SITES_DB)
+    try:
+        with open(_SITES_DB_PATH, encoding="utf-8") as _f:
+            all_sites = json.load(_f)["sites"]
+    except FileNotFoundError:
+        all_sites = []
+        
     for cs in custom_spots:
         all_sites.append({
             "id": cs.id, "name": cs.name, "lat": cs.lat, "lon": cs.lon,
