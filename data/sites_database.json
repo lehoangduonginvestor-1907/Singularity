@@ -7,7 +7,7 @@
     "radius_km": 200,
     "bortle_source": "Falchi et al. (2016) World Atlas of Night Sky Brightness + lightpollutionmap.info cross-reference",
     "elevation_source": "Copernicus DEM / Open-Meteo elevation",
-    "total_sites": 66
+    "total_sites": 78
   },
   "sites": [
     {
@@ -602,6 +602,114 @@
       "lat": 20.962,
       "lon": 107.808,
       "elevation": 170,
+      "bortle": 3
+    },
+    {
+      "id": "ho-tri-an",
+      "name": "Hồ Trị An",
+      "description": "Tỉnh: Đồng Nai. Thời điểm tốt nhất: Dec–Apr.",
+      "lat": 11.085,
+      "lon": 107.05,
+      "elevation": 80,
+      "bortle": 5
+    },
+    {
+      "id": "ho-dau-tieng",
+      "name": "Hồ Dầu Tiếng",
+      "description": "Tỉnh: Tây Ninh. Thời điểm tốt nhất: Dec–Apr.",
+      "lat": 11.35,
+      "lon": 106.35,
+      "elevation": 30,
+      "bortle": 4.5
+    },
+    {
+      "id": "mui-oi-am-mon",
+      "name": "Mũi Đôi / Đầm Môn",
+      "description": "Tỉnh: Khánh Hoà. Thời điểm tốt nhất: Mar–Aug.",
+      "lat": 12.658,
+      "lon": 109.456,
+      "elevation": 50,
+      "bortle": 3
+    },
+    {
+      "id": "ta-ung-plateau",
+      "name": "Tà Đùng plateau",
+      "description": "Tỉnh: Đắk Nông. Thời điểm tốt nhất: Dec–Mar.",
+      "lat": 11.806,
+      "lon": 107.789,
+      "elevation": 900,
+      "bortle": 3
+    },
+    {
+      "id": "nam-cuong-dunes",
+      "name": "Nam Cương dunes",
+      "description": "Tỉnh: Ninh Thuận. Thời điểm tốt nhất: Jan–Apr, Jul–Aug.",
+      "lat": 11.52,
+      "lon": 109.0,
+      "elevation": 30,
+      "bortle": 4
+    },
+    {
+      "id": "cat-ba-np-interior",
+      "name": "Cát Bà NP interior",
+      "description": "Tỉnh: Hải Phòng. Thời điểm tốt nhất: Mar–early May, Oct.",
+      "lat": 20.785,
+      "lon": 107.0,
+      "elevation": 200,
+      "bortle": 4
+    },
+    {
+      "id": "sa-pa-lee-ta-phin-ban-ho",
+      "name": "Sa Pa lee (Tả Phìn / Bản Hồ)",
+      "description": "Tỉnh: Lào Cai. Thời điểm tốt nhất: Oct–Mar.",
+      "lat": 22.385,
+      "lon": 103.91,
+      "elevation": 1500,
+      "bortle": 4
+    },
+    {
+      "id": "phu-quoc-south-bai-saokhem",
+      "name": "Phú Quốc south (Bãi Sao/Khem)",
+      "description": "Tỉnh: Kiên Giang. Thời điểm tốt nhất: Dec–Apr.",
+      "lat": 10.045,
+      "lon": 104.025,
+      "elevation": 5,
+      "bortle": 4.5
+    },
+    {
+      "id": "yok-on-np",
+      "name": "Yok Đôn NP",
+      "description": "Tỉnh: Đắk Lắk. Thời điểm tốt nhất: Dec–Mar.",
+      "lat": 12.88,
+      "lon": 107.7,
+      "elevation": 200,
+      "bortle": 3
+    },
+    {
+      "id": "can-gio-mangrove",
+      "name": "Cần Giờ mangrove",
+      "description": "Tỉnh: HCM. Thời điểm tốt nhất: Dec–Apr.",
+      "lat": 10.43,
+      "lon": 106.87,
+      "elevation": 5,
+      "bortle": 4.5
+    },
+    {
+      "id": "ong-mo-yen-bai-has-backyard",
+      "name": "Đồng Mô / Yên Bài (HAS backyard)",
+      "description": "Tỉnh: Hà Nội. Thời điểm tốt nhất: Oct–Mar (clear).",
+      "lat": 21.09,
+      "lon": 105.5,
+      "elevation": 50,
+      "bortle": 5
+    },
+    {
+      "id": "binh-hung-binh-ba",
+      "name": "Bình Hưng / Bình Ba",
+      "description": "Tỉnh: Khánh Hoà. Thời điểm tốt nhất: Mar–Aug.",
+      "lat": 11.829,
+      "lon": 109.252,
+      "elevation": 40,
       "bortle": 3
     }
   ]
