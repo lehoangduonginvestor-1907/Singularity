@@ -84,7 +84,7 @@ const TargetLocator = ({ onLocationSelect }) => {
         <input
           type="text"
           className="flex-1 bg-transparent text-cyan-50 placeholder-cyan-200/40 outline-none p-2 focus:ring-0 text-sm tracking-widest"
-          placeholder="ENTER NAME OR COORDS (e.g. 75.6, 48.0)..."
+          placeholder="ENTER LOCATION (e.g. 75.6, 48.0)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}

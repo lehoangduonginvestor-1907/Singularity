@@ -7,7 +7,7 @@
     "radius_km": 200,
     "bortle_source": "Falchi et al. (2016) World Atlas of Night Sky Brightness + lightpollutionmap.info cross-reference",
     "elevation_source": "Copernicus DEM / Open-Meteo elevation",
-    "total_sites": 36
+    "total_sites": 66
   },
   "sites": [
     {
@@ -23,7 +23,7 @@
       "id": "ba-vi-tram-kiem-lam",
       "name": "Ba Vì — Trạm kiểm lâm 400m",
       "description": "Trạm kiểm lâm độ cao 400m, bãi đất trống rộng, chân trời thoáng về phía Nam và Tây. Đường nhựa, tiếp cận dễ bằng ô tô thường.",
-      "lat": 21.0520,
+      "lat": 21.052,
       "lon": 105.3721,
       "elevation": 400,
       "bortle": 4
@@ -32,8 +32,8 @@
       "id": "moc-chau-cao-nguyen",
       "name": "Mộc Châu — Cao nguyên trung tâm",
       "description": "Cao nguyên karst 1050m, xa hoàn toàn khỏi ánh sáng đô thị. Vùng trời thoáng 360°, đặc biệt xuất sắc về phía Nam Ngân Hà. Đường QL6.",
-      "lat": 20.8370,
-      "lon": 104.6830,
+      "lat": 20.837,
+      "lon": 104.683,
       "elevation": 1050,
       "bortle": 3
     },
@@ -41,8 +41,8 @@
       "id": "moc-chau-bai-da",
       "name": "Mộc Châu — Bãi đá trắng Nàng Tiên",
       "description": "Khu vực đồng cỏ trên cao 1100m, tầm nhìn không bị cây che. Tối hơn trung tâm thị trấn Mộc Châu khoảng 0.5 Bortle.",
-      "lat": 20.8620,
-      "lon": 104.6490,
+      "lat": 20.862,
+      "lon": 104.649,
       "elevation": 1100,
       "bortle": 2
     },
@@ -50,8 +50,8 @@
       "id": "xuan-son-np",
       "name": "Vườn Quốc gia Xuân Sơn",
       "description": "Rừng nguyên sinh Phú Thọ, không có dân cư trong vùng lõi. Một trong những điểm tối nhất vùng Bắc Bộ trong bán kính 200km.",
-      "lat": 21.5330,
-      "lon": 104.9000,
+      "lat": 21.533,
+      "lon": 104.9,
       "elevation": 1000,
       "bortle": 3
     },
@@ -59,8 +59,8 @@
       "id": "pu-luong-thanh-hoa",
       "name": "Pù Luông — Bản Hiêu",
       "description": "Khu bảo tồn thiên nhiên Thanh Hóa, độ cao 1000m, không điện lưới tại nhiều bản. Sông Mã che ánh sáng từ thung lũng.",
-      "lat": 20.5290,
-      "lon": 105.0450,
+      "lat": 20.529,
+      "lon": 105.045,
       "elevation": 980,
       "bortle": 3
     },
@@ -68,8 +68,8 @@
       "id": "tam-dao-dinh-thien-thi",
       "name": "Tam Đảo — Đỉnh Thiên Thị (1375m)",
       "description": "Đỉnh cao nhất dãy Tam Đảo, vượt khỏi lớp sương mù thung lũng. Cần leo bộ ~2h từ thị trấn. Tầm nhìn 270° phía Bắc–Đông–Nam.",
-      "lat": 21.4840,
-      "lon": 105.6290,
+      "lat": 21.484,
+      "lon": 105.629,
       "elevation": 1375,
       "bortle": 3
     },
@@ -95,8 +95,8 @@
       "id": "tay-yen-tu-son-dong",
       "name": "Tây Yên Tử — Sơn Động (Bắc Giang)",
       "description": "Sườn Tây dãy Yên Tử, khu bảo tồn thiên nhiên, ít khách du lịch hơn phía Đông. Bortle thấp hơn đỉnh Yên Tử chính.",
-      "lat": 21.2650,
-      "lon": 106.7920,
+      "lat": 21.265,
+      "lon": 106.792,
       "elevation": 1050,
       "bortle": 3
     },
@@ -104,8 +104,8 @@
       "id": "thung-nai-ho-hoa-binh",
       "name": "Thung Nai — Hồ Hòa Bình",
       "description": "Bán đảo giữa hồ Hòa Bình, cách ly khỏi đất liền bằng nước. Tầm nhìn mặt hồ thoáng hoàn toàn, phản chiếu sao xuống mặt nước.",
-      "lat": 20.7500,
-      "lon": 105.3170,
+      "lat": 20.75,
+      "lon": 105.317,
       "elevation": 120,
       "bortle": 4
     },
@@ -113,8 +113,8 @@
       "id": "da-bac-hoa-binh",
       "name": "Đà Bắc — Vùng hồ thủy điện",
       "description": "Khu vực ven hồ Hòa Bình phía Tây Bắc, ít dân hơn Thung Nai. Đi thuyền ra đảo giữa hồ để tối nhất.",
-      "lat": 21.0190,
-      "lon": 105.1290,
+      "lat": 21.019,
+      "lon": 105.129,
       "elevation": 200,
       "bortle": 4
     },
@@ -122,8 +122,8 @@
       "id": "mai-chau-thung-lung",
       "name": "Mai Châu — Thung lũng cánh đồng",
       "description": "Thung lũng lúa 350m, vòm trời rộng về phía Nam. Ô nhiễm ánh sáng rất thấp, không có đèn đường trong bản. Đường QL15.",
-      "lat": 20.6640,
-      "lon": 105.1550,
+      "lat": 20.664,
+      "lon": 105.155,
       "elevation": 350,
       "bortle": 4
     },
@@ -131,8 +131,8 @@
       "id": "cuc-phuong-np",
       "name": "Vườn Quốc gia Cúc Phương",
       "description": "Rừng nguyên sinh đá vôi Ninh Bình, vùng lõi VQG không có ánh điện. Cần xin phép vào ban đêm. Tầm nhìn qua tán cây hạn chế, phải ra bãi trống.",
-      "lat": 20.3330,
-      "lon": 105.6670,
+      "lat": 20.333,
+      "lon": 105.667,
       "elevation": 350,
       "bortle": 4
     },
@@ -140,8 +140,8 @@
       "id": "trang-an-ninh-binh",
       "name": "Tràng An — Vùng đệm",
       "description": "Vùng ngoài Di sản UNESCO, đồng bằng ven núi đá vôi. Phía Nam tối hơn, chân trời thấp không bị che. Thuận tiện kết hợp du lịch.",
-      "lat": 20.2540,
-      "lon": 105.9040,
+      "lat": 20.254,
+      "lon": 105.904,
       "elevation": 12,
       "bortle": 5
     },
@@ -149,8 +149,8 @@
       "id": "kim-boi-suoi-khoang",
       "name": "Kim Bôi — Suối khoáng nóng",
       "description": "Thung lũng Hòa Bình, xung quanh là đồi núi che ánh sáng 3 hướng. Bãi cỏ rộng cạnh khu nghỉ dưỡng. Phù hợp cắm trại + quan sát.",
-      "lat": 20.6830,
-      "lon": 105.4960,
+      "lat": 20.683,
+      "lon": 105.496,
       "elevation": 180,
       "bortle": 4
     },
@@ -158,8 +158,8 @@
       "id": "ho-nui-coc-thai-nguyen",
       "name": "Hồ Núi Cốc — Thái Nguyên",
       "description": "Hồ chứa lớn giữa đồi chè, bán đảo giữa hồ tối và thoáng. Đường nhựa tốt từ TP Thái Nguyên, cách trung tâm ~20km.",
-      "lat": 21.6170,
-      "lon": 105.6680,
+      "lat": 21.617,
+      "lon": 105.668,
       "elevation": 60,
       "bortle": 5
     },
@@ -167,8 +167,8 @@
       "id": "deo-khe-thai-nguyen",
       "name": "Đèo Khế — Thái Nguyên/Tuyên Quang",
       "description": "Đèo cao 400m nằm giữa hai tỉnh, không dân cư. Bãi trống trên đỉnh đèo tầm nhìn 180°. Phù hợp dừng xe quan sát.",
-      "lat": 21.7500,
-      "lon": 105.6170,
+      "lat": 21.75,
+      "lon": 105.617,
       "elevation": 400,
       "bortle": 4
     },
@@ -176,8 +176,8 @@
       "id": "phu-tho-den-hung",
       "name": "Phú Thọ — Khu vực Đền Hùng",
       "description": "Đồi thấp 175m vùng trung du, thoát khỏi đồng bằng. Hướng Tây Bắc ít ô nhiễm ánh sáng, không có đèn đường khu vực chân núi.",
-      "lat": 21.4210,
-      "lon": 105.2290,
+      "lat": 21.421,
+      "lon": 105.229,
       "elevation": 175,
       "bortle": 5
     },
@@ -185,8 +185,8 @@
       "id": "thanh-thuy-phu-tho",
       "name": "Thanh Thủy — Phú Thọ",
       "description": "Thung lũng ven sông Đà, khu nghỉ dưỡng suối khoáng. Chân trời phẳng phía Nam, vòm sáng Hà Nội không chiếu đến đây.",
-      "lat": 21.1860,
-      "lon": 105.2480,
+      "lat": 21.186,
+      "lon": 105.248,
       "elevation": 25,
       "bortle": 5
     },
@@ -194,8 +194,8 @@
       "id": "song-da-hoa-binh",
       "name": "Sông Đà — Hòa Bình hạ lưu",
       "description": "Ven hồ hạ lưu sông Đà, cách Hòa Bình 20km về phía Nam. Bãi sông rộng, tầm nhìn không bị che, không đèn đường.",
-      "lat": 20.9000,
-      "lon": 105.1750,
+      "lat": 20.9,
+      "lon": 105.175,
       "elevation": 100,
       "bortle": 5
     },
@@ -221,8 +221,8 @@
       "id": "chua-huong-my-duc",
       "name": "Chùa Hương — Mỹ Đức",
       "description": "Suối Yến và núi đá vôi, chân trời thấp phía Nam. Mùa hè ít khách, bãi thuyền tối và thoáng.",
-      "lat": 20.6170,
-      "lon": 105.7330,
+      "lat": 20.617,
+      "lon": 105.733,
       "elevation": 50,
       "bortle": 5
     },
@@ -231,7 +231,7 @@
       "name": "Hoa Lư — Ninh Bình cổ đô",
       "description": "Thung lũng cổ đô Hoa Lư, núi đá vôi 3 hướng. Khu vực nội thung lũng tối hơn đồng bằng, phù hợp hành tinh.",
       "lat": 20.2812,
-      "lon": 105.9190,
+      "lon": 105.919,
       "elevation": 15,
       "bortle": 5
     },
@@ -239,8 +239,8 @@
       "id": "dao-cat-ba",
       "name": "Đảo Cát Bà — Đỉnh núi Ngự Lâm",
       "description": "Đỉnh núi 200m trên đảo Cát Bà, VQG không có ánh điện. Chân trời biển hoàn toàn phía Đông, Nam, Bắc. Cần tàu cao tốc từ Hải Phòng.",
-      "lat": 20.7160,
-      "lon": 107.0500,
+      "lat": 20.716,
+      "lon": 107.05,
       "elevation": 200,
       "bortle": 4
     },
@@ -248,7 +248,7 @@
       "id": "vinh-yen-vinh-phuc",
       "name": "Vĩnh Yên — Đầm Vạc",
       "description": "Đầm nước rộng ven Vĩnh Yên, khu vực đầm tối hơn trung tâm thành phố. Điểm 'nhanh và gần' nhưng Bortle trung bình.",
-      "lat": 21.3610,
+      "lat": 21.361,
       "lon": 105.5474,
       "elevation": 12,
       "bortle": 6
@@ -257,8 +257,8 @@
       "id": "dinh-ca-thai-nguyen",
       "name": "Đình Cả — Võ Nhai Thái Nguyên",
       "description": "Thung lũng hẹp núi đá Võ Nhai, rừng nguyên sinh hai bên. Cách Hà Nội ~120km nhưng cực kỳ tối do không có dân cư.",
-      "lat": 21.8330,
-      "lon": 105.9830,
+      "lat": 21.833,
+      "lon": 105.983,
       "elevation": 200,
       "bortle": 4
     },
@@ -266,8 +266,8 @@
       "id": "lang-giang-bac-giang",
       "name": "Lạng Giang — Bắc Giang",
       "description": "Đồng lúa và đồi chè ven đường QL1. Phía Bắc xa đèn Hà Nội. Bortle trung bình, thích hợp hành tinh sáng và cụm sao.",
-      "lat": 21.3730,
-      "lon": 106.2630,
+      "lat": 21.373,
+      "lon": 106.263,
       "elevation": 25,
       "bortle": 5
     },
@@ -275,8 +275,8 @@
       "id": "cao-bang-tra-linh",
       "name": "Trà Lĩnh — Cao Bằng biên giới",
       "description": "Vùng biên giới Cao Bằng, ánh sáng nhân tạo cực ít. Một trong những điểm tối nhất Bắc Bộ. Xa — chỉ phù hợp chuyến dã ngoại nhiều ngày.",
-      "lat": 22.6500,
-      "lon": 106.3830,
+      "lat": 22.65,
+      "lon": 106.383,
       "elevation": 300,
       "bortle": 2
     },
@@ -284,8 +284,8 @@
       "id": "ha-giang-dong-van",
       "name": "Đồng Văn — Hà Giang",
       "description": "Cao nguyên đá 1000m, không ô nhiễm ánh sáng. Bortle 1-2, bầu trời tối nhất Việt Nam vùng phía Bắc. Rất xa, chỉ chuyến dài ngày.",
-      "lat": 23.2750,
-      "lon": 105.3600,
+      "lat": 23.275,
+      "lon": 105.36,
       "elevation": 1050,
       "bortle": 2
     },
@@ -293,8 +293,8 @@
       "id": "sapa-nui-fan-si-pan",
       "name": "Sapa — Khu vực Fansipan",
       "description": "Chân Fansipan, hướng Đông Nam thoáng không bị vòm sáng Lào Cai. Độ cao 1600m vượt qua tầng sương mù thấp.",
-      "lat": 22.3360,
-      "lon": 103.8440,
+      "lat": 22.336,
+      "lon": 103.844,
       "elevation": 1600,
       "bortle": 3
     },
@@ -303,7 +303,7 @@
       "name": "Hòa Bình — Dốc Cun nhìn xuống hồ",
       "description": "Điểm ngắm cảnh Dốc Cun, nhìn xuống hồ Hòa Bình. Cao hơn mặt hồ ~80m, ít bị sương mù. Đường tốt, gần khu nghỉ dưỡng.",
       "lat": 20.8135,
-      "lon": 105.3380,
+      "lon": 105.338,
       "elevation": 180,
       "bortle": 5
     },
@@ -311,8 +311,8 @@
       "id": "quan-son-thanh-hoa",
       "name": "Quan Sơn — Thanh Hóa",
       "description": "Huyện vùng núi biên giới Thanh Hóa, không có công nghiệp nặng. Đường đèo 500m, tối hơn Mai Châu.",
-      "lat": 20.4530,
-      "lon": 105.0000,
+      "lat": 20.453,
+      "lon": 105.0,
       "elevation": 500,
       "bortle": 3
     },
@@ -320,8 +320,8 @@
       "id": "ha-long-ngoai-vi",
       "name": "Vịnh Hạ Long — Đảo Tuần Châu",
       "description": "Mũi nhô ra vịnh, chân trời biển hoàn toàn. Ánh sáng từ TP Hạ Long ở hướng Tây. Chỉ tốt cho hướng Đông và Nam.",
-      "lat": 20.9150,
-      "lon": 107.0000,
+      "lat": 20.915,
+      "lon": 107.0,
       "elevation": 10,
       "bortle": 5
     },
@@ -329,10 +329,280 @@
       "id": "nam-dinh-ngoai-o",
       "name": "Nam Định — Vùng đệm Cúc Phương",
       "description": "Đồng lúa phía Bắc tỉnh Nam Định, giáp Cúc Phương. Bầu trời phẳng tốt cho hành tinh thấp, Bortle chấp nhận được.",
-      "lat": 20.3500,
-      "lon": 105.8000,
+      "lat": 20.35,
+      "lon": 105.8,
       "elevation": 5,
       "bortle": 5
+    },
+    {
+      "id": "ong-van-karst-plateau-lung-cu-sang-tung-ridges",
+      "name": "Đồng Văn karst plateau – Lũng Cú / Sảng Tủng ridges",
+      "description": "Tỉnh: Hà Giang. Thời điểm tốt nhất: Oct–Mar.",
+      "lat": 23.35,
+      "lon": 105.31,
+      "elevation": 1700,
+      "bortle": 2
+    },
+    {
+      "id": "ta-xua-summit-ridge",
+      "name": "Tà Xùa summit ridge",
+      "description": "Tỉnh: Sơn La / Yên Bái. Thời điểm tốt nhất: Nov–Mar.",
+      "lat": 21.358,
+      "lon": 104.45,
+      "elevation": 2865,
+      "bortle": 2
+    },
+    {
+      "id": "lao-than-nui-lao-than-hau-pong-san",
+      "name": "Lảo Thẩn (Núi Lảo Thẩn / Hâu Pông San)",
+      "description": "Tỉnh: Lào Cai (Y Tý). Thời điểm tốt nhất: Oct–Feb.",
+      "lat": 22.6104,
+      "lon": 103.6865,
+      "elevation": 2826,
+      "bortle": 2
+    },
+    {
+      "id": "bidoup-summit-long-lanh-saddle",
+      "name": "Bidoup summit & Long Lanh saddle",
+      "description": "Tỉnh: Lâm Đồng. Thời điểm tốt nhất: Dec–Mar.",
+      "lat": 12.117,
+      "lon": 108.673,
+      "elevation": 2287,
+      "bortle": 3
+    },
+    {
+      "id": "con-ao-bai-am-trau-mui-ca-map",
+      "name": "Côn Đảo – Bãi Đầm Trầu / Mũi Cá Mập",
+      "description": "Tỉnh: Bà Rịa–Vũng Tàu. Thời điểm tốt nhất: Mar–Aug.",
+      "lat": 8.7,
+      "lon": 106.625,
+      "elevation": 80,
+      "bortle": 2
+    },
+    {
+      "id": "bach-moc-luong-tu-ky-quan-san-high-camp",
+      "name": "Bạch Mộc Lương Tử (Ky Quan San) high camp",
+      "description": "Tỉnh: Lai Châu / Lào Cai. Thời điểm tốt nhất: Nov–Mar.",
+      "lat": 22.5,
+      "lon": 103.575,
+      "elevation": 3046,
+      "bortle": 2
+    },
+    {
+      "id": "y-ty-phin-ho-ngai-thau-plateau",
+      "name": "Y Tý – Phìn Hồ / Ngải Thầu plateau",
+      "description": "Tỉnh: Lào Cai. Thời điểm tốt nhất: Oct–Feb.",
+      "lat": 22.633,
+      "lon": 103.672,
+      "elevation": 2200,
+      "bortle": 2
+    },
+    {
+      "id": "phu-quy-mui-cot-co-vinh-trieu-duong-se-coast",
+      "name": "Phú Quý – Mũi Cột Cờ / Vịnh Triều Dương SE coast",
+      "description": "Tỉnh: Bình Thuận. Thời điểm tốt nhất: Feb–Aug.",
+      "lat": 10.524,
+      "lon": 108.945,
+      "elevation": 106,
+      "bortle": 2
+    },
+    {
+      "id": "chu-yang-sin-np-krong-bong-core",
+      "name": "Chư Yang Sin NP – Krông Bông core",
+      "description": "Tỉnh: Đắk Lắk. Thời điểm tốt nhất: Dec–Mar.",
+      "lat": 12.413,
+      "lon": 108.45,
+      "elevation": 2442,
+      "bortle": 2
+    },
+    {
+      "id": "bach-long-vi-island",
+      "name": "Bạch Long Vĩ Island",
+      "description": "Tỉnh: Hải Phòng. Thời điểm tốt nhất: Mar–early May, Sep.",
+      "lat": 20.14,
+      "lon": 107.722,
+      "elevation": 58,
+      "bortle": 2
+    },
+    {
+      "id": "ma-pi-leng-pass-viewpoint-area",
+      "name": "Mã Pí Lèng Pass viewpoint area",
+      "description": "Tỉnh: Hà Giang. Thời điểm tốt nhất: Oct–Mar.",
+      "lat": 23.26,
+      "lon": 105.359,
+      "elevation": 1500,
+      "bortle": 2
+    },
+    {
+      "id": "pu-luong-core-son-ba-muoi-plateau",
+      "name": "Pù Luông core – Son Bá Mười plateau",
+      "description": "Tỉnh: Thanh Hoá. Thời điểm tốt nhất: Oct–Apr.",
+      "lat": 20.483,
+      "lon": 105.117,
+      "elevation": 1300,
+      "bortle": 3
+    },
+    {
+      "id": "phong-nha-hang-ba-u-bo-backcountry",
+      "name": "Phong Nha – Hang Ba / U Bò backcountry",
+      "description": "Tỉnh: Quảng Bình. Thời điểm tốt nhất: Mar–Aug.",
+      "lat": 17.5,
+      "lon": 106.25,
+      "elevation": 700,
+      "bortle": 3
+    },
+    {
+      "id": "ta-nang-phan-dung-plateau",
+      "name": "Tà Năng – Phan Dũng plateau",
+      "description": "Tỉnh: Lâm Đồng / Bình Thuận. Thời điểm tốt nhất: Dec–Apr.",
+      "lat": 11.482,
+      "lon": 108.435,
+      "elevation": 1700,
+      "bortle": 3
+    },
+    {
+      "id": "pu-mat-np-khe-kem-pha-lai",
+      "name": "Pu Mát NP – Khe Kèm / Phà Lài",
+      "description": "Tỉnh: Nghệ An. Thời điểm tốt nhất: Mar–Aug.",
+      "lat": 19.0,
+      "lon": 104.7,
+      "elevation": 800,
+      "bortle": 3
+    },
+    {
+      "id": "mang-en-kon-bring-ak-ke-perimeter",
+      "name": "Măng Đen – Kon Bring / Đak Ke perimeter",
+      "description": "Tỉnh: Kon Tum. Thời điểm tốt nhất: Dec–Mar.",
+      "lat": 14.64,
+      "lon": 108.29,
+      "elevation": 1300,
+      "bortle": 3
+    },
+    {
+      "id": "putaleng-high-camp",
+      "name": "Putaleng high camp",
+      "description": "Tỉnh: Lai Châu. Thời điểm tốt nhất: Nov–Mar.",
+      "lat": 22.412,
+      "lon": 103.475,
+      "elevation": 3049,
+      "bortle": 2
+    },
+    {
+      "id": "ta-chi-nhu-summit-camp",
+      "name": "Tà Chì Nhù summit camp",
+      "description": "Tỉnh: Yên Bái. Thời điểm tốt nhất: Nov–Mar.",
+      "lat": 21.521,
+      "lon": 104.317,
+      "elevation": 2979,
+      "bortle": 2
+    },
+    {
+      "id": "khau-pha-lim-mong-tu-le-ridges",
+      "name": "Khâu Phạ – Lìm Mông / Tú Lệ ridges",
+      "description": "Tỉnh: Yên Bái. Thời điểm tốt nhất: Oct–Mar.",
+      "lat": 21.745,
+      "lon": 104.3,
+      "elevation": 1500,
+      "bortle": 3
+    },
+    {
+      "id": "cao-bang-phia-oac-np",
+      "name": "Cao Bằng – Phia Oắc NP",
+      "description": "Tỉnh: Cao Bằng. Thời điểm tốt nhất: Oct–Mar.",
+      "lat": 22.617,
+      "lon": 105.87,
+      "elevation": 1931,
+      "bortle": 3
+    },
+    {
+      "id": "eo-gia-bac-loc-bac-forest",
+      "name": "Đèo Gia Bắc / Lộc Bắc forest",
+      "description": "Tỉnh: Lâm Đồng. Thời điểm tốt nhất: Dec–Mar.",
+      "lat": 11.713,
+      "lon": 107.76,
+      "elevation": 1400,
+      "bortle": 3
+    },
+    {
+      "id": "bau-trang-dunes-north-side",
+      "name": "Bàu Trắng dunes (north side)",
+      "description": "Tỉnh: Bình Thuận. Thời điểm tốt nhất: Jan–Apr, Jul–Aug.",
+      "lat": 11.172,
+      "lon": 108.388,
+      "elevation": 60,
+      "bortle": 4
+    },
+    {
+      "id": "mui-ne-suoi-hong-inland-hon-rom",
+      "name": "Mũi Né – Suối Hồng / inland Hòn Rơm",
+      "description": "Tỉnh: Bình Thuận. Thời điểm tốt nhất: Feb–Apr, Jul–Aug.",
+      "lat": 10.972,
+      "lon": 108.345,
+      "elevation": 80,
+      "bortle": 4
+    },
+    {
+      "id": "cat-tien-np-bau-sau-interior",
+      "name": "Cát Tiên NP – Bàu Sấu interior",
+      "description": "Tỉnh: Đồng Nai / Lâm Đồng. Thời điểm tốt nhất: Dec–Mar.",
+      "lat": 11.45,
+      "lon": 107.367,
+      "elevation": 300,
+      "bortle": 3
+    },
+    {
+      "id": "pha-in-pass-plateau",
+      "name": "Pha Đin Pass plateau",
+      "description": "Tỉnh: Sơn La / Điện Biên. Thời điểm tốt nhất: Nov–Mar.",
+      "lat": 21.587,
+      "lon": 103.447,
+      "elevation": 1200,
+      "bortle": 3
+    },
+    {
+      "id": "hang-kia-pa-co",
+      "name": "Hang Kia – Pà Cò",
+      "description": "Tỉnh: Hoà Bình. Thời điểm tốt nhất: Nov–Mar.",
+      "lat": 20.73,
+      "lon": 104.87,
+      "elevation": 1400,
+      "bortle": 3
+    },
+    {
+      "id": "moc-chau-pa-phach-ta-so-plateaus",
+      "name": "Mộc Châu – Pa Phách / Tà Số plateaus",
+      "description": "Tỉnh: Sơn La. Thời điểm tốt nhất: Nov–Mar.",
+      "lat": 20.875,
+      "lon": 104.62,
+      "elevation": 1300,
+      "bortle": 4
+    },
+    {
+      "id": "ly-son-ao-lon-east-side",
+      "name": "Lý Sơn (Đảo Lớn east side)",
+      "description": "Tỉnh: Quảng Ngãi. Thời điểm tốt nhất: Mar–Aug.",
+      "lat": 15.385,
+      "lon": 109.125,
+      "elevation": 169,
+      "bortle": 3
+    },
+    {
+      "id": "bach-ma-np-summit-area",
+      "name": "Bạch Mã NP summit area",
+      "description": "Tỉnh: Thừa Thiên Huế. Thời điểm tốt nhất: Mar–Aug, *not* Sep–Feb.",
+      "lat": 16.196,
+      "lon": 107.853,
+      "elevation": 1450,
+      "bortle": 3
+    },
+    {
+      "id": "co-to-island-east-coast",
+      "name": "Cô Tô island east coast",
+      "description": "Tỉnh: Quảng Ninh. Thời điểm tốt nhất: Mar–early May, Sep–Oct.",
+      "lat": 20.962,
+      "lon": 107.808,
+      "elevation": 170,
+      "bortle": 3
     }
   ]
 }
