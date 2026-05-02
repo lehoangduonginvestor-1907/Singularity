@@ -160,7 +160,11 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 
     setLoading(true); setError(null); setResults(null);
     try {
       const data = await fetchSiteRanker(userLat, userLon, customSpots);
-      setResults(data);
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setResults(data);
+      }
     } catch (e) { setError(e.message); } 
     finally { setLoading(false); }
   }, [userLat, userLon, customSpots]);
