@@ -76,7 +76,10 @@ function collect() {
     if (!lastTsStr) {
       startTs = new Date(now.getTime() - 24 * 3600000); // Lấy 24h trước nếu sheet trống
     } else {
-      startTs = new Date(new Date(lastTsStr).getTime() + 3600000);
+      // Đảm bảo parse chuỗi thời gian là UTC bằng cách chuyển thành chuẩn ISO 8601 (có 'Z')
+      let isoStr = lastTsStr.replace(" ", "T");
+      if (!isoStr.endsWith("Z")) isoStr += ":00Z";
+      startTs = new Date(new Date(isoStr).getTime() + 3600000);
     }
 
     if (startTs > now) {
@@ -301,7 +304,7 @@ function _ensureSheet(name, headers, color) {
 function _getLastTimestamp(ws) {
   const lastRow = ws.getLastRow();
   if (lastRow <= 1) return null;
-  return ws.getRange(lastRow, 1).getValue();
+  return ws.getRange(lastRow, 1).getDisplayValue();
 }
 
 function _fetch7Timer() {

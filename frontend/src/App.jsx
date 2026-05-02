@@ -202,12 +202,12 @@ export default function App() {
             }}
           >
             {/* Top Navbar (Glassmorphism) */}
-            <div className="absolute top-4 left-4 right-4 sm:top-6 sm:left-8 sm:right-8 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 flex justify-between items-center z-20">
-              <div className="flex items-center gap-3">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white opacity-80"><path d="M12 2L2 22h20L12 2z"/><path d="M12 2v20"/><path d="M2 22l10-12"/><path d="M22 22l-10-12"/></svg>
-                <span className="text-white font-sans text-lg sm:text-xl font-medium tracking-wide">Project Singularity</span>
+            <div className="absolute top-4 left-4 right-4 sm:top-6 sm:left-8 sm:right-8 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-2 sm:p-4 flex justify-between items-center z-20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white opacity-80 sm:w-8 sm:h-8"><path d="M12 2L2 22h20L12 2z"/><path d="M12 2v20"/><path d="M2 22l10-12"/><path d="M22 22l-10-12"/></svg>
+                <span className="text-white font-sans text-sm sm:text-xl font-medium tracking-wide whitespace-nowrap shrink-0">{lang === 'en' ? 'Project Singularity' : 'Dự Án Singularity'}</span>
               </div>
-              <div className="flex items-center gap-4 sm:gap-6 text-white/70 font-mono text-xs sm:text-sm">
+              <div className="flex items-center gap-3 sm:gap-6 text-white/70 font-mono text-[10px] sm:text-sm">
                 <div className="flex gap-2">
                   <button onClick={() => setLang('en')} className={`transition-colors ${lang === 'en' ? 'text-white font-bold' : 'hover:text-white'}`}>EN</button>
                   <span className="opacity-50">/</span>
@@ -284,7 +284,7 @@ export default function App() {
                   onClick={() => setViewState('landing')}
                   title="Return to Main Search"
                 >
-                  <h1 className="m-0 text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #fff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  <h1 className="m-0 text-xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #fff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     <Sparkles color="#a78bfa" size={28} className="shrink-0" /> {t.app_title}
                   </h1>
                   <p className="m-0 mt-1 text-xs sm:text-sm text-white/40 font-medium tracking-wide">{t.app_sub}</p>
