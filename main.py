@@ -554,11 +554,11 @@ def _score_site(site: dict, user_lat: float, user_lon: float,
                 "v_model": round(v_model, 1), "s_eff": 0,
                 "veto_reason": f"ΔT sương quá thấp ({delta_t:.1f}°C) — nguy cơ đọng sương trên kính"}
 
-    # ── Luật 2: Khoảng cách tối đa ─────────────────────────────────────────
-    if time_mins > 180:
+    # ── Luật 2: Khoảng cách tối đa (Nới lỏng lên 300 phút ~ 200km thực tế) ──
+    if time_mins > 300:
         return {**site, "dist_km": round(dist_km), "time_mins": round(time_mins),
                 "v_model": round(v_model, 1), "s_eff": 0,
-                "veto_reason": f"Quá xa ({dist_km:.0f}km, ~{time_mins:.0f} phút) — không đáng đi trong 1 đêm"}
+                "veto_reason": f"Quá xa ({dist_km:.0f}km, ~{time_mins:.0f} phút) — không phù hợp đi trong đêm"}
 
     # ── Luật 3: Lunar Masking ───────────────────────────────────────────────
     moon_pen = _moon_penalty_bortle(moon_phase_deg)
@@ -566,12 +566,12 @@ def _score_site(site: dict, user_lat: float, user_lon: float,
 
     # ── Luật 4: Cost Function → Final Score ────────────────────────────────
     base = v_model - (bortle_eff * 0.5)
-    if time_mins < 90:
+    if time_mins < 120:
         s_eff = base
         drive_note = f"Gần ({dist_km:.0f}km, ~{time_mins:.0f} phút)"
-    else:  # 90 <= time_mins <= 180
-        s_eff = base - 2.0
-        drive_note = f"Xa vừa ({dist_km:.0f}km, ~{time_mins:.0f} phút, -2 điểm mệt đường)"
+    else:  # 120 <= time_mins <= 300
+        s_eff = base - 2.5
+        drive_note = f"Xa ({dist_km:.0f}km, ~{time_mins:.0f} phút, -2.5 điểm mệt đường)"
 
     # ── Lý do cụ thể ────────────────────────────────────────────────────────
     moon_illum_pct = round((1 + math.cos(math.radians(moon_phase_deg)))/2 * 100)
@@ -601,6 +601,7 @@ def _fetch_and_score_site(site: dict, user_lat: float, user_lon: float,
     Được gọi song song trong ThreadPoolExecutor.
     """
     try:
+        # Sử dụng lon để fetchers xác định đúng khung giờ ban đêm
         atmos = Type1Fetcher.fetch_atmosphere_profile_12h(site["lat"], site["lon"])
         surface = Type1Fetcher.fetch_surface_data_12h(site["lat"], site["lon"])
 
@@ -656,12 +657,8 @@ def rank_sites(
     except Exception:
         moon_phase_deg = 90.0  # Fallback: quarter moon
 
-    # Merge database sites + custom spots
-    try:
-        with open(_SITES_DB_PATH, encoding="utf-8") as _f:
-            all_sites = json.load(_f)["sites"]
-    except FileNotFoundError:
-        all_sites = []
+    # Sử dụng global _SITES_DB đã load ở đầu file
+    all_sites = list(_SITES_DB)
         
     for cs in custom_spots:
         all_sites.append({
@@ -670,14 +667,14 @@ def rank_sites(
             "description": cs.description, "_custom": True
         })
 
-    # Filter: chỉ giữ sites trong bán kính 200km (pre-filter trước khi gọi API)
+    # Filter: Tăng lên 2000km để phủ toàn quốc
     candidates = [
         s for s in all_sites
-        if _haversine_km(user_lat, user_lon, s["lat"], s["lon"]) <= 200
+        if _haversine_km(user_lat, user_lon, s["lat"], s["lon"]) <= 2000
     ]
 
     if not candidates:
-        return {"error": "Không có địa điểm nào trong bán kính 200km.", "results": []}
+        return {"error": "Không có địa điểm nào trong bán kính 2000km.", "results": []}
 
     # Batch fetch + score song song (max 8 workers để tránh quá tải API)
     results = []
