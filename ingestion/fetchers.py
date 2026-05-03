@@ -1,6 +1,6 @@
 import requests
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import random
 
 class Type1Fetcher:
@@ -8,8 +8,27 @@ class Type1Fetcher:
     Fetch data from Open-Meteo API.
     """
     @staticmethod
-    def get_start_index(times: list) -> int:
-        current_time_str = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:00")
+    def get_start_index(times: list, lon: float = None) -> int:
+        now_utc = datetime.now(timezone.utc)
+        
+        if lon is not None:
+            tz_offset = round(lon / 15.0)
+            current_local_time = now_utc + timedelta(hours=tz_offset)
+            
+            if current_local_time.hour < 6:
+                target_local = current_local_time.replace(hour=18, minute=0, second=0, microsecond=0) - timedelta(days=1)
+            else:
+                target_local = current_local_time.replace(hour=18, minute=0, second=0, microsecond=0)
+                
+            target_utc = target_local - timedelta(hours=tz_offset)
+            target_time_str = target_utc.strftime("%Y-%m-%dT%H:00")
+            
+            try:
+                return times.index(target_time_str)
+            except ValueError:
+                pass
+
+        current_time_str = now_utc.replace(minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:00")
         try:
             return times.index(current_time_str)
         except ValueError:
@@ -36,7 +55,7 @@ class Type1Fetcher:
         response.raise_for_status()
         data = response.json()
         
-        idx = Type1Fetcher.get_start_index(data["hourly"]["time"])
+        idx = Type1Fetcher.get_start_index(data["hourly"]["time"], lon)
         
         result_12h = []
         pressures = [1000, 850, 700, 500, 300]
@@ -95,8 +114,8 @@ class Type1Fetcher:
         resp_aqi.raise_for_status()
         data_aqi = resp_aqi.json()
         
-        idx = Type1Fetcher.get_start_index(data["hourly"]["time"])
-        idx_aqi = Type1Fetcher.get_start_index(data_aqi["hourly"]["time"])
+        idx = Type1Fetcher.get_start_index(data["hourly"]["time"], lon)
+        idx_aqi = Type1Fetcher.get_start_index(data_aqi["hourly"]["time"], lon)
         
         result_12h = []
         for i in range(12):
