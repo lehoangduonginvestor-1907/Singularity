@@ -184,7 +184,7 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 
             Observatory Site Planner
           </h2>
           <p style={{ margin: "8px 0 0", fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>
-            Physics-first site ranking across {results?.meta?.total_evaluated ?? "78"} locations within 200km.
+            Physics-first site ranking across {results?.meta?.total_evaluated ?? "78"} locations within 2000km.
           </p>
         </div>
         
