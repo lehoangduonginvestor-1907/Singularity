@@ -1,6 +1,151 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Navigation, Mountain, Clock, Moon, Star, Plus, X, AlertTriangle } from "lucide-react";
+import { MapPin, Navigation, Mountain, Clock, Moon, Star, Plus, X, AlertTriangle, Target } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+});
+
+// Custom component to handle map view changes
+function MapController({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, zoom, { animate: true });
+    }
+  }, [center, zoom, map]);
+  return null;
+}
+
+function MapSection({ userLat, userLon, top5, vetoed }) {
+  const [mapZoom, setMapZoom] = useState(7);
+  const [mapCenter, setMapCenter] = useState([userLat, userLon]);
+
+  const markers = useMemo(() => {
+    const all = [];
+    if (top5) {
+      top5.forEach((s, i) => all.push({ ...s, type: 'passed', rank: i + 1 }));
+    }
+    if (vetoed) {
+      vetoed.forEach(s => all.push({ ...s, type: 'vetoed' }));
+    }
+    return all;
+  }, [top5, vetoed]);
+
+  return (
+    <div style={{
+      height: "400px",
+      width: "100%",
+      borderRadius: "24px",
+      overflow: "hidden",
+      border: "1px solid rgba(255,255,255,0.1)",
+      marginBottom: "32px",
+      position: "relative",
+      zIndex: 10
+    }}>
+      <MapContainer 
+        center={mapCenter} 
+        zoom={mapZoom} 
+        style={{ height: "100%", width: "100%", background: "#050505" }}
+        zoomControl={false}
+      >
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        />
+        
+        <MapController center={mapCenter} zoom={mapZoom} />
+
+        {/* User Location */}
+        <CircleMarker 
+          center={[userLat, userLon]} 
+          radius={8}
+          pathOptions={{ fillColor: '#ffffff', fillOpacity: 1, color: '#a78bfa', weight: 4 }}
+        >
+          <Popup>Vị trí của bạn</Popup>
+        </CircleMarker>
+
+        {markers.map((s, idx) => {
+          const isPassed = s.type === 'passed';
+          const color = isPassed ? getScoreColor(s.s_eff) : "#f87171";
+          
+          return (
+            <CircleMarker
+              key={`${s.id}-${idx}`}
+              center={[s.lat, s.lon]}
+              radius={isPassed ? 10 : 6}
+              pathOptions={{ 
+                fillColor: color, 
+                fillOpacity: isPassed ? 0.8 : 0.4, 
+                color: isPassed ? '#ffffff' : color, 
+                weight: isPassed ? 2 : 1 
+              }}
+              eventHandlers={{
+                click: () => {
+                  setMapCenter([s.lat, s.lon]);
+                  setMapZoom(12);
+                }
+              }}
+            >
+              <Popup>
+                <div style={{ color: "#000", fontSize: "12px", minWidth: "120px" }}>
+                  <strong style={{ display: 'block', marginBottom: '4px' }}>{s.name}</strong>
+                  {isPassed ? (
+                    <>
+                      <div style={{ color: color, fontWeight: 800 }}>Score: {s.s_eff.toFixed(1)}/10</div>
+                      <div style={{ fontSize: "10px" }}>{s.dist_km}km | ~{s.time_mins}m drive</div>
+                    </>
+                  ) : (
+                    <div style={{ color: "#f87171", fontSize: "10px" }}>VETO: {s.veto_reason}</div>
+                  )}
+                </div>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+      </MapContainer>
+
+      {/* Map UI Overlays */}
+      <div style={{
+        position: "absolute",
+        bottom: "16px",
+        left: "16px",
+        zIndex: 1000,
+        background: "rgba(5,5,5,0.8)",
+        backdropFilter: "blur(8px)",
+        padding: "8px 12px",
+        borderRadius: "12px",
+        border: "1px solid rgba(255,255,255,0.1)",
+        display: "flex",
+        gap: "12px",
+        fontSize: "10px",
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.05em"
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffffff', border: '2px solid #a78bfa' }} />
+          <span>You</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00e5ff' }} />
+          <span>Top Sites</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(248,113,113,0.4)' }} />
+          <span>Vetoed</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Bortle color palette (chuẩn IDA/Globe at Night) ─────────────────────────
 const BORTLE_CONFIG = {
@@ -151,6 +296,11 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
+  
+  // Map control state
+  const [mapCenter, setMapCenter] = useState([userLat, userLon]);
+  const [mapZoom, setMapZoom] = useState(7);
+
   const [customSpots, setCustomSpots] = useState(() => {
     try { return JSON.parse(localStorage.getItem("singularity_custom_spots") || "[]"); }
     catch { return []; }
@@ -164,10 +314,20 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 
         setError(data.error);
       } else {
         setResults(data);
+        // Tự động căn giữa bản đồ vào vị trí người dùng khi có kết quả
+        setMapCenter([userLat, userLon]);
+        setMapZoom(7);
       }
     } catch (e) { setError(e.message); } 
     finally { setLoading(false); }
   }, [userLat, userLon, customSpots]);
+
+  const focusOnSite = (lat, lon) => {
+    setMapCenter([lat, lon]);
+    setMapZoom(12);
+    // Cuộn lên đầu bản đồ để người dùng thấy
+    window.scrollTo({ top: 100, behavior: 'smooth' });
+  };
 
   return (
     <div style={{ color: "#ffffff", padding: 0 }}>
@@ -213,20 +373,35 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 
       )}
 
       {results && (
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "16px", padding: "16px 20px", marginBottom: "32px", fontSize: "13px", alignItems: 'center' }}>
-          <Moon size={18} color={results.meta.moon_illum_pct > 80 ? "#f87171" : results.meta.moon_illum_pct > 40 ? "#fbbf24" : "#34d399"} />
-          <span>Moon: <strong style={{ fontFamily: 'Roboto Mono' }}>{results.meta.moon_illum_pct}%</strong></span>
-          <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
-          <span>Viable Sites: <strong style={{ color: "#00e5ff", fontFamily: 'Roboto Mono' }}>{results.meta.passed}/{results.meta.total_evaluated}</strong></span>
-          <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
-          <span style={{ color: "rgba(255,255,255,0.4)" }}>Vetoed: {results.meta.vetoed}</span>
-        </div>
+        <>
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "16px", padding: "16px 20px", marginBottom: "24px", fontSize: "13px", alignItems: 'center' }}>
+            <Moon size={18} color={results.meta.moon_illum_pct > 80 ? "#f87171" : results.meta.moon_illum_pct > 40 ? "#fbbf24" : "#34d399"} />
+            <span>Moon: <strong style={{ fontFamily: 'Roboto Mono' }}>{results.meta.moon_illum_pct}%</strong></span>
+            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
+            <span>Viable Sites: <strong style={{ color: "#00e5ff", fontFamily: 'Roboto Mono' }}>{results.meta.passed}/{results.meta.total_evaluated}</strong></span>
+            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
+            <span style={{ color: "rgba(255,255,255,0.4)" }}>Vetoed: {results.meta.vetoed}</span>
+          </div>
+
+          <MapSection 
+            userLat={userLat} 
+            userLon={userLon} 
+            top5={results.top5} 
+            vetoed={results.vetoed}
+            mapCenter={mapCenter}
+            mapZoom={mapZoom}
+            setMapCenter={setMapCenter}
+            setMapZoom={setMapZoom}
+          />
+        </>
       )}
 
       {results?.top5?.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "32px" }}>
           {results.top5.map((site, i) => (
-            <SiteCard key={site.id} site={site} rank={i + 1} />
+            <div key={site.id} onClick={() => focusOnSite(site.lat, site.lon)} style={{ cursor: 'pointer' }}>
+              <SiteCard site={site} rank={i + 1} />
+            </div>
           ))}
         </div>
       )}
