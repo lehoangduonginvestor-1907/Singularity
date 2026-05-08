@@ -88,9 +88,8 @@ def tatarski_cn2(temp_k: float, pressure_hpa: float, lapse_rate_k_per_m: float) 
 
         Stability term: lapse_rate_k_per_m + GAMMA_DRY
         Vi GAMMA_DRY = -9.8e-3 (am san), chi can cong thang.
-        (dT/dh + Gamma_d) = 0   --> cn2 = 0 (trung tinh)
-        (dT/dh + Gamma_d) < 0   --> cn2 lon (bat on dinh, seeing xau)
-        (dT/dh + Gamma_d) > 0   --> cn2 nho (on dinh, seeing tot)
+        (dT/dh - Gamma_d) = 0   --> cn2 = 0 (trung tinh, khi dT/dh = Gamma_d)
+        (dT/dh - Gamma_d) != 0  --> cn2 lon (bat on dinh hoac nghich nhiet)
 
     Source: Tatarski (1961), Wave Propagation in a Turbulent Medium
     """
@@ -99,8 +98,11 @@ def tatarski_cn2(temp_k: float, pressure_hpa: float, lapse_rate_k_per_m: float) 
     # KHONG nhan pressure_hpa voi 100 -- hang so 79e-6 yeu cau don vi hPa
 
     # Tinh stability term:
+    # Tatarski: stability = (dT/dh) - Γ_d
+    # Trong đó Γ_d = GAMMA_DRY = -9.8e-3 K/m (đã mang dấu âm)
+    # Khi trung tính (dT/dh = Γ_d = -9.8e-3): stability = (-9.8e-3) - (-9.8e-3) = 0 → Cn² = 0 ✓
+    # Khi bất ổn (dT/dh < Γ_d): stability < 0 → |stability|² lớn → Cn² lớn → seeing xấu ✓
     stability = lapse_rate_k_per_m - GAMMA_DRY
-    # Vi GAMMA_DRY = -9.8e-3 (da mang dau am), de triet tieu khi trung tinh phai dung phep tru
 
     # Tinh cn2:
     cn2 = (thermal_coeff ** 2) * (L0_OUTER ** (4.0/3.0)) * (stability ** 2)

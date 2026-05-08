@@ -1,7 +1,48 @@
 import requests
 import math
+import time as _time
 from datetime import datetime, timezone, timedelta
 import random
+import logging
+
+log = logging.getLogger(__name__)
+
+# ─── TTL Cache ────────────────────────────────────────────────────────────────
+_CACHE = {}
+_CACHE_TTL = 900  # 15 minutes — weather data doesn't change faster than this
+
+def _cache_key(prefix: str, lat: float, lon: float) -> str:
+    """Round coords to 2 decimals to improve cache hit rate (~1km precision)."""
+    return f"{prefix}:{lat:.2f},{lon:.2f}"
+
+def _get_cached(key: str):
+    if key in _CACHE:
+        entry = _CACHE[key]
+        if _time.time() - entry["ts"] < _CACHE_TTL:
+            return entry["data"]
+        del _CACHE[key]  # Expired
+    return None
+
+def _set_cache(key: str, data):
+    _CACHE[key] = {"data": data, "ts": _time.time()}
+
+# ─── HTTP helper with timeout + retry ─────────────────────────────────────────
+_HTTP_TIMEOUT = 15  # seconds
+_HTTP_RETRIES = 2
+
+def _robust_get(url: str, params: dict, timeout: int = _HTTP_TIMEOUT) -> dict:
+    """GET with timeout and retry. Raises on final failure."""
+    for attempt in range(_HTTP_RETRIES + 1):
+        try:
+            resp = requests.get(url, params=params, timeout=timeout)
+            resp.raise_for_status()
+            return resp.json()
+        except (requests.Timeout, requests.ConnectionError) as e:
+            if attempt == _HTTP_RETRIES:
+                log.error(f"API request failed after {_HTTP_RETRIES + 1} attempts: {url} — {e}")
+                raise
+            log.warning(f"API attempt {attempt + 1} failed ({e}), retrying...")
+            _time.sleep(1.0 * (attempt + 1))
 
 class Type1Fetcher:
     """
@@ -36,6 +77,11 @@ class Type1Fetcher:
 
     @staticmethod
     def fetch_atmosphere_profile_12h(lat: float, lon: float) -> list:
+        cache_key = _cache_key("atmos12h", lat, lon)
+        cached = _get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         url = "https://api.open-meteo.com/v1/forecast"
         
         levels = ["1000hPa", "850hPa", "700hPa", "500hPa", "300hPa"]
@@ -51,9 +97,8 @@ class Type1Fetcher:
             "timezone": "UTC"
         }
         
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
+        resp = _robust_get(url, params)
+        data = resp
         
         idx = Type1Fetcher.get_start_index(data["hourly"]["time"], lon)
         
@@ -86,10 +131,16 @@ class Type1Fetcher:
                 "profile": profile
             })
             
+        _set_cache(cache_key, result_12h)
         return result_12h
 
     @staticmethod
     def fetch_surface_data_12h(lat: float, lon: float) -> list:
+        cache_key = _cache_key("surface12h", lat, lon)
+        cached = _get_cached(cache_key)
+        if cached is not None:
+            return cached
+
         url_weather = "https://api.open-meteo.com/v1/forecast"
         params_weather = {
             "latitude": lat,
@@ -98,9 +149,8 @@ class Type1Fetcher:
             "forecast_days": 2,
             "timezone": "UTC"
         }
-        resp_weather = requests.get(url_weather, params=params_weather)
-        resp_weather.raise_for_status()
-        data = resp_weather.json()
+        resp_weather = _robust_get(url_weather, params_weather)
+        data = resp_weather
         
         url_aqi = "https://air-quality-api.open-meteo.com/v1/air-quality"
         params_aqi = {
@@ -110,9 +160,8 @@ class Type1Fetcher:
             "forecast_days": 2,
             "timezone": "UTC"
         }
-        resp_aqi = requests.get(url_aqi, params=params_aqi)
-        resp_aqi.raise_for_status()
-        data_aqi = resp_aqi.json()
+        resp_aqi = _robust_get(url_aqi, params_aqi)
+        data_aqi = resp_aqi
         
         idx = Type1Fetcher.get_start_index(data["hourly"]["time"], lon)
         idx_aqi = Type1Fetcher.get_start_index(data_aqi["hourly"]["time"], lon)
@@ -128,6 +177,7 @@ class Type1Fetcher:
                 "aqi": aqi_val if aqi_val is not None else 50
             })
             
+        _set_cache(cache_key, result_12h)
         return result_12h
 
 class Type2Fetcher:

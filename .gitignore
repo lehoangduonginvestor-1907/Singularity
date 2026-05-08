@@ -79,3 +79,4 @@ sensor_log.csv              # Không đẩy file dữ liệu thô lên trừ khi
 .idea/
 *.swp
 *.swo
+gha-creds-*.json
