@@ -1,6 +1,6 @@
 gspread
 google-auth
 requests
-numpy
+numpy<2.0.0
 astropy
 pandas
