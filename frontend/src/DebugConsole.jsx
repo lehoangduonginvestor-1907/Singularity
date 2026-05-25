@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, ChevronDown, ChevronUp, Droplet, Wind, Eye, Moon, Activity } from 'lucide-react';
 import { formatLocalTime, formatTzLabel } from './utils';
+import { API_URL } from './api';
 
 const cardStyle = {
   background: 'rgba(255, 255, 255, 0.02)',
@@ -141,7 +142,7 @@ export default function DebugConsole({ targetName, lat, lon }) {
     }
     setLoading(true);
     try {
-      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/debug-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}`);
+      const r = await fetch(`${API_URL}/api/debug-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}`);
       const d = await r.json();
       setData(d);
       setOpen(true);

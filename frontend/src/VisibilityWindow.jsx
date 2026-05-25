@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronDown, ChevronUp, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { getTzOffset, formatTzLabel } from './utils';
+import { API_URL } from './api';
 
 const cardStyle = {
   background: 'rgba(255, 255, 255, 0.02)',
@@ -30,7 +31,7 @@ export default function VisibilityWindow({ targetName, lat, lon }) {
     }
     setLoading(true);
     try {
-      const r = await fetch(`${import.meta.env.VITE_API_URL}/api/visibility-window?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}&days=5`);
+      const r = await fetch(`${API_URL}/api/visibility-window?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}&days=5`);
       const d = await r.json();
       setData(d);
       setOpen(true);

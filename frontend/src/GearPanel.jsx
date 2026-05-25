@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, Crosshair, Zap, Eye, Search, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { API_URL } from './api';
 
 const cardStyle = {
   background: 'rgba(255, 255, 255, 0.02)',
@@ -27,7 +28,7 @@ export default function GearPanel({ lat, lon }) {
     if (!open) setOpen(true);
     setLoading(true);
     try {
-      const url = `${import.meta.env.VITE_API_URL}/api/gear-check?lat=${lat}&lon=${lon}&aperture_mm=${aperture}&focal_length_mm=${focal}&eyepiece_mm=${eyepiece}`;
+      const url = `${API_URL}/api/gear-check?lat=${lat}&lon=${lon}&aperture_mm=${aperture}&focal_length_mm=${focal}&eyepiece_mm=${eyepiece}`;
       const r = await fetch(url);
       const d = await r.json();
       setResult(d);

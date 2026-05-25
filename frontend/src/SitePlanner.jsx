@@ -4,6 +4,7 @@ import { MapPin, Navigation, Mountain, Clock, Moon, Star, Plus, X, AlertTriangle
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { API_URL as API } from './api';
 
 // Fix Leaflet icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -169,7 +170,7 @@ const getScoreColor = (s) => {
   return "#f87171";
 };
 
-const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
 
 async function fetchSiteRanker(userLat, userLon, customSpots = []) {
   const url = `${API}/api/site-ranker?user_lat=${userLat}&user_lon=${userLon}`;

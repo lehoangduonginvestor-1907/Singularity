@@ -8,6 +8,7 @@ import GearPanel from './GearPanel';
 import SitePlanner from './SitePlanner';
 import TargetLocator from './TargetLocator';
 import { DICT, formatLocalTime, formatTzLabel } from './utils';
+import { API_URL } from './api';
 
 /* ─── GARGANTUA ANIMATION ────────────────────────────────────────────────── */
 const Gargantua = () => (
@@ -104,17 +105,17 @@ export default function App() {
 
   const tzLabel = formatTzLabel(lon);
 
-  const scan = async (scanLat, scanLon, retries = 2) => {
+  const scan = async (scanLat, scanLon, retries = 10) => {
     setLoading(true); setError('');
     setScanMessage('CALCULATING ATMOSPHERIC PHYSICS...');
     
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         if (attempt > 0) {
-          setScanMessage(`RE-ESTABLISHING LINK... (ATTEMPT ${attempt + 1})`);
-          await new Promise(res => setTimeout(res, 1500 * attempt));
+          setScanMessage(`WAKING BACKEND... (ATTEMPT ${attempt}/${retries})`);
+          await new Promise(res => setTimeout(res, 5000));
         }
-        const r = await fetch(`${import.meta.env.VITE_API_URL}/api/global-sky?lat=${scanLat}&lon=${scanLon}`);
+        const r = await fetch(`${API_URL}/api/global-sky?lat=${scanLat}&lon=${scanLon}`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const d = await r.json();
         setGlobalData(d);
@@ -150,12 +151,12 @@ export default function App() {
     scan(lat, lon);
   };
 
-  const fetchForecast = async (name, retries = 2) => {
+  const fetchForecast = async (name, retries = 10) => {
     if (!name) return;
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        if (attempt > 0) await new Promise(res => setTimeout(res, 1500 * attempt));
-        const r = await fetch(`${import.meta.env.VITE_API_URL}/api/target-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(name)}`);
+        if (attempt > 0) await new Promise(res => setTimeout(res, 5000));
+        const r = await fetch(`${API_URL}/api/target-forecast?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(name)}`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const d = await r.json();
         const localForecast = d.forecast.map(item => ({
