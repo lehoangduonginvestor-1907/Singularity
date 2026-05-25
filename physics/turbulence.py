@@ -246,8 +246,11 @@ def fried_parameter(cn2_profile: np.ndarray, heights_m: np.ndarray, lambda_m: fl
 
     Source: Roddier (1999), Adaptive Optics in Astronomy, ch.2
     """
-    # Tich phan Cn2 theo do cao bang numpy.trapz:
-    integral_cn2 = np.trapezoid(cn2_profile, heights_m)
+    # Tich phan Cn2 theo do cao bang numpy:
+    if hasattr(np, "trapezoid"):
+        integral_cn2 = np.trapezoid(cn2_profile, heights_m)
+    else:
+        integral_cn2 = np.trapz(cn2_profile, heights_m)
 
 
     # Xu ly truong hop integral_cn2 <= 0
