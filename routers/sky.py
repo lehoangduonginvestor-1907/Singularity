@@ -21,9 +21,15 @@ def _get_atmos_fetcher(use_ensemble: bool):
 
 
 @router.get("/api/health")
-def health_check():
-    """Readiness check for deployment monitoring."""
-    return {"status": "ok", "catalog_size": len(df_catalog), "ensemble_available": True}
+def health_check(lat: float = 20.886355, lon: float = 105.755763):
+    """Readiness check for deployment monitoring with diagnostics."""
+    err = None
+    try:
+        get_global_sky(lat, lon)
+    except Exception as e:
+        import traceback
+        err = traceback.format_exc()
+    return {"status": "ok" if not err else "error", "error": err, "catalog_size": len(df_catalog), "ensemble_available": True}
 
 
 @router.get("/api/global-sky")
