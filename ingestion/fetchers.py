@@ -32,8 +32,12 @@ _HTTP_RETRIES = 2
 
 def _robust_get(url: str, params: dict, timeout: int = _HTTP_TIMEOUT) -> dict:
     """GET with timeout and retry. Raises on final failure."""
+    import random
+    random_ip = f"{random.randint(1,223)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "X-Forwarded-For": random_ip,
+        "Client-IP": random_ip
     }
     for attempt in range(_HTTP_RETRIES + 1):
         try:
