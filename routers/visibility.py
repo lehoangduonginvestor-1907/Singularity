@@ -44,7 +44,7 @@ def get_visibility_window(lat: float = Query(...), lon: float = Query(...), targ
         dark_s = next((h for h in range(24) if sun_alts[h] < -18), 18)
         dark_e = next((h for h in range(23, -1, -1) if sun_alts[h] < -18), 6)
         sunset = next((h for h in range(24) if sun_alts[h] < 0), None)
-        vis = [h["hour"] for h in hourly if h["alt"] > 30 and (h["hour"] >= dark_s or h["hour"] <= dark_e)]
+        vis = [h["hour"] for h in hourly if h["alt"] > 30 and sun_alts[h["hour"]] < -18]
         result_days.append(to_python({
             "date": day_start.strftime("%Y-%m-%d"),
             "day_label": ["Today", "Tomorrow", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"][day_offset],

@@ -38,7 +38,7 @@ log = logging.getLogger("collector")
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
 LAT  = float(os.getenv("COLLECT_LAT",  "20.886355"))
 LON  = float(os.getenv("COLLECT_LON",  "105.755763"))
-CSV_FILE = "catalog.csv"
+CSV_FILE = "weather_telemetry.csv"
 LOCAL_UTC_OFFSET = int(os.getenv("LOCAL_UTC_OFFSET", "7"))
 SLEEP_INTERVAL = int(os.getenv("SLEEP_INTERVAL", "1800")) # 30 phút mặc định
 
@@ -87,8 +87,11 @@ def get_last_timestamp_csv() -> datetime | None:
             return None
         last_val = df["timestamp_utc"].iloc[-1]
         return datetime.fromisoformat(last_val).replace(tzinfo=timezone.utc)
-    except Exception:
+    except pd.errors.EmptyDataError:
         return None
+    except Exception as e:
+        log.error(f"Failed to read {CSV_FILE}: {e}. Halting to prevent data corruption.")
+        raise
 
 def append_to_csv(rows):
     with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:

@@ -93,7 +93,9 @@ def _fetch_and_score_site(site, user_lat, user_lon, moon_phase_deg):
         if not atmos or not surface:
             return {**site, "s_eff": 0, "veto_reason": "No weather data"}
 
-        surface[0]["pressure"] = surface[0].get("pressure", 1013.25) * (
+        # Clone to prevent cache pollution
+        surf_data = dict(surface[0])
+        surf_data["pressure"] = surf_data.get("pressure", 1013.25) * (
             (1 - 0.0000226 * site["elevation"]) ** 5.256
         )
 
@@ -101,7 +103,7 @@ def _fetch_and_score_site(site, user_lat, user_lon, moon_phase_deg):
         ephem = AstroHelper.get_ephemeris(site["lat"], site["lon"], atmos[0]["time"], dummy)
         ephem["target_alt"] = 90.0
 
-        payload = SingularityOrchestrator.map_and_execute(ephem, atmos[0]["profile"], surface[0])
+        payload = SingularityOrchestrator.map_and_execute(ephem, atmos[0]["profile"], surf_data)
         v_model = float(payload["scores"]["v_model_10"])
         delta_t = float(payload["raw_physics"]["delta_t"])
         return _score_site(site, user_lat, user_lon, moon_phase_deg, v_model, delta_t)
@@ -124,6 +126,9 @@ def rank_sites(
     user_lat: float = Query(...), user_lon: float = Query(...),
     custom_spots: list[CustomSpot] = None
 ):
+    if custom_spots and len(custom_spots) > 10:
+        return {"error": "Maximum 10 custom spots allowed.", "results": []}
+
     try:
         t_now = datetime.now(timezone.utc)
         dummy = AstroHelper.make_zenith_series()
