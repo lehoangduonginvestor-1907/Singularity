@@ -32,9 +32,12 @@ _HTTP_RETRIES = 2
 
 def _robust_get(url: str, params: dict, timeout: int = _HTTP_TIMEOUT) -> dict:
     """GET with timeout and retry. Raises on final failure."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    }
     for attempt in range(_HTTP_RETRIES + 1):
         try:
-            resp = requests.get(url, params=params, timeout=timeout)
+            resp = requests.get(url, params=params, headers=headers, timeout=timeout)
             resp.raise_for_status()
             return resp.json()
         except (requests.Timeout, requests.ConnectionError) as e:
