@@ -16,19 +16,11 @@ from routers.site_ranker import router as site_ranker_router
 app = FastAPI(title="Singularity API", version="3.1")
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
-_ALLOWED_ORIGINS = [
-    "http://localhost:5173",          # Vite dev server
-    "http://localhost:4173",          # Vite preview
-    "http://127.0.0.1:5173",
-    os.getenv("FRONTEND_URL", ""),    # Production URL from env
-]
-_ALLOWED_ORIGINS = [o for o in _ALLOWED_ORIGINS if o]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 

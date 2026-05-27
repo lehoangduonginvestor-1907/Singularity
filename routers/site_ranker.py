@@ -7,7 +7,8 @@ import math
 import concurrent.futures
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Query
+from typing import List
+from fastapi import APIRouter, Query, Body
 from pydantic import BaseModel
 import pandas as pd
 
@@ -124,7 +125,7 @@ class CustomSpot(BaseModel):
 @router.post("/api/site-ranker")
 def rank_sites(
     user_lat: float = Query(...), user_lon: float = Query(...),
-    custom_spots: list[CustomSpot] = None
+    custom_spots: List[CustomSpot] = Body(default=None)
 ):
     if custom_spots and len(custom_spots) > 10:
         return {"error": "Maximum 10 custom spots allowed.", "results": []}
