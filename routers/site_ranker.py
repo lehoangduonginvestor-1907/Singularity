@@ -150,6 +150,9 @@ def rank_sites(
     if not candidates:
         return {"error": "No sites within 2000km.", "results": []}
 
+    # Prefetch weather data in batch for all candidates to avoid slow thread-level sequential API requests
+    Type1Fetcher.prefetch_batch_12h(candidates)
+
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         futures = {executor.submit(_fetch_and_score_site, s, user_lat, user_lon, moon_phase_deg): s for s in candidates}
@@ -163,13 +166,22 @@ def rank_sites(
     vetoed = sorted([r for r in results if r.get("s_eff", 0) == 0], key=lambda x: x.get("dist_km", 999))
     moon_illum = round((1 + math.cos(math.radians(moon_phase_deg)))/2 * 100)
 
+    # Separate preset and custom sites to ensure all custom spots are always included
+    passed_presets = [r for r in passed if not r.get("_custom")]
+    passed_customs = [r for r in passed if r.get("_custom")]
+    vetoed_presets = [r for r in vetoed if not r.get("_custom")]
+    vetoed_customs = [r for r in vetoed if r.get("_custom")]
+
+    final_top5 = passed_presets[:5] + passed_customs
+    final_vetoed = vetoed_presets[:5] + vetoed_customs
+
     return to_python({
         "meta": {
             "user_lat": user_lat, "user_lon": user_lon,
             "moon_phase_deg": round(moon_phase_deg, 1), "moon_illum_pct": moon_illum,
             "total_evaluated": len(candidates), "passed": len(passed), "vetoed": len(vetoed),
         },
-        "top5": passed[:5], "vetoed": vetoed[:5],
+        "top5": final_top5, "vetoed": final_vetoed,
     })
 
 

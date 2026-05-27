@@ -598,6 +598,7 @@ export default function App() {
         const skyRes = await fetch(`${API_URL}/api/global-sky?lat=20.886355&lon=105.755763`);
         if (skyRes.ok) {
           const skyData = await skyRes.json();
+          setGlobalData(skyData);
           const zm = skyData.zenith_metrics;
           setLandingMetrics(prev => ({
             ...prev,
@@ -840,10 +841,10 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                     {[
-                      { l: lang === 'en' ? "MEDIAN SEEING" : "SEEING TRUNG BÌNH", v: landingMetrics.seeing.toFixed(1), unit: "″",  s: [3.4,3.0,2.6,2.2,1.9,1.6,1.5,landingMetrics.seeing], color: "#00f0ff" },
-                      { l: lang === 'en' ? "TRANSPARENCY" : "ĐỘ TRONG SUỐT",  v: landingMetrics.transparency.toFixed(0), unit: "%",   s: [42,55,62,68,74,78,76,landingMetrics.transparency],         color: "#a855f7" },
-                      { l: lang === 'en' ? "MEDIAN SQM" : "BẦU TRỜI (SQM)",    v: landingMetrics.sqm.toFixed(1), unit: "",  s: [18.2,18.8,19.4,20.0,20.4,20.5,20.3,landingMetrics.sqm], color: "#c4a0fb" },
-                      { l: lang === 'en' ? "DEW RISK" : "NGUY CƠ ĐỌNG SƯƠNG",      v: landingMetrics.dew_risk.toFixed(0), unit: "%",   s: [28,24,20,18,17,18,19,landingMetrics.dew_risk],         color: "#5cf2bd" },
+                       { l: lang === 'en' ? "MEDIAN SEEING" : "SEEING TRUNG BÌNH", v: landingMetrics.seeing.toFixed(1), unit: "″",  s: [3.4,3.0,2.6,2.2,1.9,1.6,1.5,landingMetrics.seeing], color: "var(--cyan)" },
+                       { l: lang === 'en' ? "TRANSPARENCY" : "ĐỘ TRONG SUỐT",  v: landingMetrics.transparency.toFixed(0), unit: "%",   s: [42,55,62,68,74,78,76,landingMetrics.transparency],         color: "var(--violet)" },
+                       { l: lang === 'en' ? "MEDIAN SQM" : "BẦU TRỜI (SQM)",    v: landingMetrics.sqm.toFixed(1), unit: "",  s: [18.2,18.8,19.4,20.0,20.4,20.5,20.3,landingMetrics.sqm], color: "var(--violet)" },
+                       { l: lang === 'en' ? "DEW RISK" : "NGUY CƠ ĐỌNG SƯƠNG",      v: landingMetrics.dew_risk.toFixed(0), unit: "%",   s: [28,24,20,18,17,18,19,landingMetrics.dew_risk],         color: "var(--green)" },
                     ].map(m => (
                       <div key={m.l}>
                         <div className="t-eyebrow text-[9.5px] text-white/40">{m.l}</div>
@@ -936,12 +937,16 @@ export default function App() {
                 {/* Moon Preset site card */}
                 <div className="p-5 bg-gradient-to-b from-[#1c1612]/55 to-[#0a0a0e]/70 border border-white/6 backdrop-blur-xl rounded-[18px] relative overflow-hidden">
                   <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(240px 140px at 100% 0%, rgba(255,107,0,0.10), transparent 60%)" }}/>
-                  <span className="t-mono text-[9.5px] text-white/40">{lang === 'en' ? 'MOON · WAXING GIBBOUS' : 'LỊCH LUNAR · TRĂNG GIBBOUS'}</span>
+                  <span className="t-mono text-[9.5px] text-white/40">
+                    {globalData?.moon_metrics 
+                      ? (lang === 'en' ? `MOON · ${globalData.moon_metrics.phase_label_en}` : `LỊCH LUNAR · ${globalData.moon_metrics.phase_label_vi}`)
+                      : (lang === 'en' ? 'MOON · WAXING GIBBOUS' : 'LỊCH LUNAR · TRĂNG GIBBOUS')}
+                  </span>
                   <div className="flex items-center gap-3.5 mt-3">
-                    <Moon3D size={48} phase={0.86} />
+                    <Moon3D size={48} phase={globalData?.moon_metrics ? (globalData.moon_metrics.phase_angle_deg / 180.0) : 0.86} />
                     <div>
                       <div className="text-3xl font-light text-white leading-none" style={{ fontFamily: "var(--font-display)" }}>
-                        86<span className="text-base text-white/50">%</span>
+                        {globalData?.moon_metrics ? globalData.moon_metrics.illumination : 86}<span className="text-base text-white/50">%</span>
                       </div>
                       <div className="text-[10px] text-white/40 mt-1">illumination</div>
                     </div>
@@ -950,15 +955,21 @@ export default function App() {
                   <div className="flex justify-between text-xs t-mono">
                     <div>
                       <span className="text-[8px] block text-white/30">RISE</span>
-                      <span className="text-white font-semibold mt-1 block">16:42</span>
+                      <span className="text-white font-semibold mt-1 block">
+                        {globalData?.moon_metrics ? globalData.moon_metrics.rise_local : '16:42'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-[8px] block text-white/30">TRANSIT</span>
-                      <span className="text-white font-semibold mt-1 block">22:08</span>
+                      <span className="text-white font-semibold mt-1 block">
+                        {globalData?.moon_metrics ? globalData.moon_metrics.transit_local : '22:08'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-[8px] block text-white/30">SET</span>
-                      <span className="text-orange-300 font-semibold mt-1 block">04:12</span>
+                      <span className="text-orange-300 font-semibold mt-1 block">
+                        {globalData?.moon_metrics ? globalData.moon_metrics.set_local : '04:12'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -967,28 +978,46 @@ export default function App() {
                 <div className="p-5 bg-gradient-to-b from-[#1c1628]/55 to-[#0a0a0e]/70 border border-[#a855f7]/30 backdrop-blur-xl rounded-[18px] relative overflow-hidden">
                   <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(260px 160px at 100% 0%, rgba(168,85,247,0.18), transparent 60%)" }}/>
                   <div className="flex justify-between items-center">
-                    <span className="t-mono text-[9px] text-white/40">{lang === 'en' ? 'FEATURED · M51' : 'TIÊU ĐIỂM · M51'}</span>
-                    <span className="bg-purple-500/15 border border-purple-500/30 text-[#c4a0fb] text-[9.5px] px-2 py-0.5 rounded-full font-mono font-bold">DSO</span>
+                    <span className="t-mono text-[9px] text-white/40">
+                      {globalData?.featured_target 
+                        ? (lang === 'en' ? `FEATURED · ${globalData.featured_target.name}` : `TIÊU ĐIỂM · ${globalData.featured_target.name}`)
+                        : (lang === 'en' ? 'FEATURED · M51' : 'TIÊU ĐIỂM · M51')}
+                    </span>
+                    <span className="bg-purple-500/15 border border-purple-500/30 text-[#c4a0fb] text-[9.5px] px-2 py-0.5 rounded-full font-mono font-bold">
+                      {globalData?.featured_target ? globalData.featured_target.type : 'DSO'}
+                    </span>
                   </div>
                   <div className="text-3xl font-light text-white mt-3 leading-none" style={{ fontFamily: "var(--font-display)" }}>
-                    M51 <span className="italic text-white/50 text-base font-normal">Whirlpool</span>
+                    {globalData?.featured_target ? globalData.featured_target.name : 'M51'}{" "}
+                    <span className="italic text-white/50 text-base font-normal">
+                      {globalData?.featured_target ? globalData.featured_target.sub : 'Whirlpool'}
+                    </span>
                   </div>
                   <div className="text-[11px] text-white/45 mt-1 leading-normal">
-                    Canes Venatici · transits at <span className="text-purple-300/80 font-mono font-semibold">00:30</span>
+                    {globalData?.featured_target ? globalData.featured_target.region : 'Canes Venatici'} · transits at{" "}
+                    <span className="text-purple-300/80 font-mono font-semibold">
+                      {globalData?.featured_target ? globalData.featured_target.transit_local : '00:30'}
+                    </span>
                   </div>
                   <div className="h-[1px] bg-white/6 my-3" />
                   <div className="flex justify-between text-xs t-mono">
                     <div>
                       <span className="text-[8px] block text-white/30">ALT</span>
-                      <span className="text-white font-semibold mt-1 block">72°</span>
+                      <span className="text-white font-semibold mt-1 block">
+                        {globalData?.featured_target ? `${globalData.featured_target.alt}°` : '72°'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-[8px] block text-white/30">MAG</span>
-                      <span className="text-white font-semibold mt-1 block">8.4</span>
+                      <span className="text-white font-semibold mt-1 block">
+                        {globalData?.featured_target ? globalData.featured_target.mag.toFixed(1) : '8.4'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-[8px] block text-[#c4a0fb] opacity-80">SCORE</span>
-                      <span className="text-[#c4a0fb] font-semibold mt-1 block">7.8</span>
+                      <span className="text-[#c4a0fb] font-semibold mt-1 block">
+                        {globalData?.featured_target ? globalData.featured_target.score.toFixed(1) : '7.8'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1234,11 +1263,11 @@ export default function App() {
                         </div>
                         <div className="flex gap-4 text-xs font-mono text-white/55">
                           <div className="flex items-center gap-1.5">
-                            <span className="w-4 h-0.5 bg-[#00e5ff] inline-block" />
+                            <span className="w-4 h-0.5 bg-[var(--cyan)] inline-block" />
                             <span>SINGULARITY</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="w-4 h-0.5 bg-[#a78bfa] border-t border-dashed inline-block" />
+                            <span className="w-4 h-0.5 bg-[var(--violet)] border-t border-dashed inline-block" />
                             <span>7TIMER</span>
                           </div>
                         </div>
@@ -1251,19 +1280,19 @@ export default function App() {
                             <AreaChart data={forecast} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
                               <defs>
                                 <linearGradient id="gPhysics" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#00e5ff" stopOpacity={0.25} />
-                                  <stop offset="100%" stopColor="#00e5ff" stopOpacity={0} />
+                                  <stop offset="0%" stopColor="var(--cyan)" stopOpacity={0.25} />
+                                  <stop offset="100%" stopColor="var(--cyan)" stopOpacity={0} />
                                 </linearGradient>
                                 <linearGradient id="gBench" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.12} />
-                                  <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
+                                  <stop offset="0%" stopColor="var(--violet)" stopOpacity={0.12} />
+                                  <stop offset="100%" stopColor="var(--violet)" stopOpacity={0} />
                                 </linearGradient>
                               </defs>
                               <XAxis dataKey="localTime" stroke="rgba(255,255,255,0.08)" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10.5, fontFamily: 'Roboto Mono' }} axisLine={false} tickLine={false} />
                               <YAxis domain={[0,10]} stroke="rgba(255,255,255,0.08)" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10.5, fontFamily: 'Roboto Mono' }} axisLine={false} tickLine={false} />
                               <Tooltip content={<ChartTooltip tzLabel={tzLabel} />} cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }} />
-                              <Area type="monotone" dataKey="physics_score" name={t.physics_score} stroke="#00e5ff" strokeWidth={2.5} fill="url(#gPhysics)" dot={false} activeDot={{ r: 5, fill: '#00e5ff', stroke: '#000', strokeWidth: 1.5 }} />
-                              <Area type="monotone" dataKey="benchmark_score" name={t.bench_score} stroke="#a78bfa" strokeWidth={1.8} strokeDasharray="5 5" fill="url(#gBench)" dot={false} />
+                              <Area type="monotone" dataKey="physics_score" name={t.physics_score} stroke="var(--cyan)" strokeWidth={2.5} fill="url(#gPhysics)" dot={false} activeDot={{ r: 5, fill: 'var(--cyan)', stroke: '#000', strokeWidth: 1.5 }} />
+                              <Area type="monotone" dataKey="benchmark_score" name={t.bench_score} stroke="var(--violet)" strokeWidth={1.8} strokeDasharray="5 5" fill="url(#gBench)" dot={false} />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
@@ -1330,7 +1359,7 @@ export default function App() {
             {activeTab === 'planner' && (
               <div className="max-w-[1400px] mx-auto px-6 sm:px-10 py-10 relative z-10">
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                  <SitePlanner userLat={lat} userLon={lon} />
+                  <SitePlanner userLat={lat} userLon={lon} redVision={redVision} />
                 </motion.div>
               </div>
             )}

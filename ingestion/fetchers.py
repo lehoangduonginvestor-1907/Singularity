@@ -189,6 +189,146 @@ class Type1Fetcher:
         _set_cache(cache_key, result_12h)
         return result_12h
 
+    @staticmethod
+    def prefetch_batch_12h(sites: list):
+        """
+        Prefetch atmosphere and surface data for a list of coordinates in batches,
+        and populate the TTL Cache.
+        """
+        uncached_coords = []
+        for s in sites:
+            lat, lon = s["lat"], s["lon"]
+            ak = _cache_key("atmos12h", lat, lon)
+            sk = _cache_key("surface12h", lat, lon)
+            if _get_cached(ak) is None or _get_cached(sk) is None:
+                uncached_coords.append((lat, lon))
+        
+        if not uncached_coords:
+            return
+            
+        BATCH_SIZE = 30
+        for idx in range(0, len(uncached_coords), BATCH_SIZE):
+            batch = uncached_coords[idx:idx+BATCH_SIZE]
+            lats_str = ",".join(str(c[0]) for c in batch)
+            lons_str = ",".join(str(c[1]) for c in batch)
+            
+            # 1. Fetch atmosphere profiles
+            url_atmos = "https://api.open-meteo.com/v1/forecast"
+            levels = ["1000hPa", "850hPa", "700hPa", "500hPa", "300hPa"]
+            variables = []
+            for l in levels:
+                variables.extend([f"temperature_{l}", f"windspeed_{l}", f"winddirection_{l}"])
+                
+            params_atmos = {
+                "latitude": lats_str,
+                "longitude": lons_str,
+                "hourly": ",".join(variables),
+                "forecast_days": 2,
+                "timezone": "UTC"
+            }
+            try:
+                res_atmos = _robust_get(url_atmos, params_atmos)
+                if not isinstance(res_atmos, list):
+                    res_atmos = [res_atmos]
+            except Exception as e:
+                log.error(f"Batch atmosphere fetch failed: {e}")
+                res_atmos = []
+                
+            # 2. Fetch surface weather data
+            params_surf = {
+                "latitude": lats_str,
+                "longitude": lons_str,
+                "hourly": "temperature_2m,relative_humidity_2m,surface_pressure,cloud_cover",
+                "forecast_days": 2,
+                "timezone": "UTC"
+            }
+            try:
+                res_surf = _robust_get(url_atmos, params_surf)
+                if not isinstance(res_surf, list):
+                    res_surf = [res_surf]
+            except Exception as e:
+                log.error(f"Batch surface fetch failed: {e}")
+                res_surf = []
+                
+            # 3. Fetch AQI data
+            url_aqi = "https://air-quality-api.open-meteo.com/v1/air-quality"
+            params_aqi = {
+                "latitude": lats_str,
+                "longitude": lons_str,
+                "hourly": "european_aqi,pm2_5",
+                "forecast_days": 2,
+                "timezone": "UTC"
+            }
+            try:
+                res_aqi = _robust_get(url_aqi, params_aqi)
+                if not isinstance(res_aqi, list):
+                    res_aqi = [res_aqi]
+            except Exception as e:
+                log.error(f"Batch AQI fetch failed: {e}")
+                res_aqi = []
+                
+            pressures = [1000, 850, 700, 500, 300]
+            for i, (lat, lon) in enumerate(batch):
+                # Atmosphere
+                try:
+                    if i < len(res_atmos) and "hourly" in res_atmos[i]:
+                        data_a = res_atmos[i]
+                        start_idx = Type1Fetcher.get_start_index(data_a["hourly"]["time"], lon)
+                        atmos_results = []
+                        for h_idx in range(start_idx, start_idx + 12):
+                            profile = []
+                            for p_hpa in pressures:
+                                t = data_a["hourly"][f"temperature_{p_hpa}hPa"][h_idx]
+                                speed_kmh = data_a["hourly"][f"windspeed_{p_hpa}hPa"][h_idx]
+                                direction_deg = data_a["hourly"][f"winddirection_{p_hpa}hPa"][h_idx]
+                                
+                                speed_ms = speed_kmh / 3.6
+                                dir_rad = math.radians(direction_deg)
+                                u = -speed_ms * math.sin(dir_rad)
+                                v = -speed_ms * math.cos(dir_rad)
+                                
+                                profile.append({
+                                    "pressure": p_hpa,
+                                    "temp": t,
+                                    "wind_u": u,
+                                    "wind_v": v,
+                                    "wind_speed": speed_ms
+                                })
+                            dt_utc = datetime.strptime(data_a["hourly"]["time"][h_idx], "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc)
+                            atmos_results.append({
+                                "time": dt_utc,
+                                "profile": profile
+                            })
+                        ak = _cache_key("atmos12h", lat, lon)
+                        _set_cache(ak, atmos_results)
+                except Exception as e:
+                    log.error(f"Error parsing batch atmos for {lat},{lon}: {e}")
+                    
+                # Surface + AQI
+                try:
+                    if i < len(res_surf) and "hourly" in res_surf[i] and i < len(res_aqi) and "hourly" in res_aqi[i]:
+                        data_s = res_surf[i]
+                        data_aq = res_aqi[i]
+                        start_idx = Type1Fetcher.get_start_index(data_s["hourly"]["time"], lon)
+                        start_idx_aqi = Type1Fetcher.get_start_index(data_aq["hourly"]["time"], lon)
+                        
+                        surf_results = []
+                        for h_idx in range(12):
+                            aqi_val = data_aq["hourly"]["european_aqi"][start_idx_aqi + h_idx]
+                            pm25_val = data_aq["hourly"]["pm2_5"][start_idx_aqi + h_idx]
+                            surf_results.append({
+                                "temp": data_s["hourly"]["temperature_2m"][start_idx + h_idx],
+                                "rh": data_s["hourly"]["relative_humidity_2m"][start_idx + h_idx],
+                                "pressure": data_s["hourly"]["surface_pressure"][start_idx + h_idx],
+                                "cloud_cover": data_s["hourly"]["cloud_cover"][start_idx + h_idx],
+                                "aqi": aqi_val if aqi_val is not None else 50,
+                                "pm2_5": pm25_val if pm25_val is not None else 15.0
+                            })
+                        sk = _cache_key("surface12h", lat, lon)
+                        _set_cache(sk, surf_results)
+                except Exception as e:
+                    log.error(f"Error parsing batch surface for {lat},{lon}: {e}")
+
 class Type2Fetcher:
     """
     Benchmark data from 7Timer API (Astro Product)

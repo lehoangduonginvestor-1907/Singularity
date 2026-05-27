@@ -153,7 +153,7 @@ function MapController({ center, zoom }) {
 }
 
 /* ── Map Section ────────────────────────────────────────────── */
-function MapSection({ userLat, userLon, top5, vetoed }) {
+function MapSection({ userLat, userLon, top5, vetoed, redVision = false }) {
   const [mapZoom, setMapZoom] = useState(7);
   const [mapCenter, setMapCenter] = useState([userLat, userLon]);
 
@@ -222,13 +222,18 @@ function MapSection({ userLat, userLon, top5, vetoed }) {
 
             {markers.map((s, idx) => {
               const isPassed = s.type === "passed";
-              const color = isPassed ? getScoreColor(s.s_eff) : "rgba(255,138,160,0.5)";
+              const color = redVision
+                ? (isPassed ? "#ff333d" : "rgba(180,10,20,0.3)")
+                : (isPassed ? getScoreColor(s.s_eff) : "rgba(255,138,160,0.5)");
+              const borderCol = redVision
+                ? (isPassed ? "rgba(255,255,255,0.7)" : "rgba(180,10,20,0.4)")
+                : (isPassed ? "rgba(255,255,255,0.6)" : color);
               return (
                 <CircleMarker key={`${s.id}-${idx}`} center={[s.lat, s.lon]}
                   radius={isPassed ? 9 : 5}
                   pathOptions={{
-                    fillColor: color, fillOpacity: isPassed ? 0.85 : 0.35,
-                    color: isPassed ? "rgba(255,255,255,0.6)" : color,
+                    fillColor: color, fillOpacity: redVision ? (isPassed ? 0.9 : 0.2) : (isPassed ? 0.85 : 0.35),
+                    color: borderCol,
                     weight: isPassed ? 2 : 1,
                   }}
                   eventHandlers={{ click: () => { setMapCenter([s.lat, s.lon]); setMapZoom(12); } }}>
@@ -545,7 +550,7 @@ async function fetchSiteRanker(userLat, userLon, customSpots = []) {
 /* ═══════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════ */
-export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 }) {
+export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763, redVision = false }) {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -783,6 +788,7 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763 
           <MapSection
             userLat={userLat} userLon={userLon}
             top5={results.top5} vetoed={results.vetoed}
+            redVision={redVision}
           />
         </div>
       )}

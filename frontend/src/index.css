@@ -40,8 +40,64 @@ body {
 }
 
 .red-vision {
-  filter: grayscale(100%) sepia(100%) hue-rotate(-55deg) saturate(1000%) brightness(0.65) contrast(1.1) !important;
+  /* Core night-vision overrides */
+  --bg-void: #000000;
+  --bg-base: #000000;
+  --bg-surface: #0a0102;
+
+  --cyan: #ff2b3c;
+  --cyan-raw: 255, 43, 60;
+  --violet: #cf0020;
+  --violet-raw: 207, 0, 32;
+  --orange: #ff3b30;
+  --orange-raw: 255, 59, 48;
+  --green: #e60020;
+  --green-raw: 230, 0, 32;
+  --red: #ff3b30;
+  --red-raw: 255, 59, 48;
+
+  --fg-primary: #ff3b46;
+  --fg-secondary: rgba(255, 59, 70, 0.65);
+  --fg-tertiary: rgba(255, 59, 70, 0.4);
+
+  --card-bg: linear-gradient(180deg, rgba(14, 2, 3, 0.8), rgba(4, 0, 0, 0.95));
+  --card-border: 1px solid rgba(255, 0, 40, 0.14);
+  --card-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 0, 40, 0.04);
+  
   background-color: #000000 !important;
+}
+
+/* Map tiles and controls night vision */
+.red-vision .leaflet-tile-container {
+  filter: grayscale(100%) sepia(100%) hue-rotate(-55deg) saturate(3.5) brightness(0.4) contrast(1.2) !important;
+}
+
+.red-vision .leaflet-container {
+  background: #000000 !important;
+}
+
+.red-vision .leaflet-bar, 
+.red-vision .leaflet-control {
+  border-color: rgba(255, 0, 40, 0.2) !important;
+}
+
+.red-vision .leaflet-bar a {
+  background-color: #080102 !important;
+  color: #ff2b3c !important;
+  border-bottom-color: rgba(255, 0, 40, 0.15) !important;
+}
+
+.red-vision .leaflet-popup-content-wrapper {
+  background: rgba(10, 2, 3, 0.96) !important;
+  border: 1px solid rgba(255, 0, 40, 0.22) !important;
+  color: #ff3b46 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75) !important;
+}
+
+.red-vision .leaflet-popup-tip {
+  background: rgba(10, 2, 3, 0.96) !important;
+  border-left: 1px solid rgba(255, 0, 40, 0.22) !important;
+  border-bottom: 1px solid rgba(255, 0, 40, 0.22) !important;
 }
 
 /* Eyebrow text */
