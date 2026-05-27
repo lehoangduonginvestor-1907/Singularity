@@ -578,6 +578,10 @@ export default function SitePlanner({ userLat = 20.886355, userLon = 105.755763,
     finally { setLoading(false); }
   }, [userLat, userLon, customSpots]);
 
+  useEffect(() => {
+    runRanker();
+  }, [runRanker]);
+
   const addCustomSpot = () => {
     const lat = parseFloat(addLat), lon = parseFloat(addLon);
     if (!addName.trim() || isNaN(lat) || isNaN(lon)) return;

@@ -27,17 +27,17 @@ const NebulaArtHybrid = () => (
   <svg width="100%" height="100%" viewBox="0 0 1440 1280" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 pointer-events-none z-0">
     <defs>
       <radialGradient id="hyb-warm" cx="0.62" cy="0.28" r="0.55">
-        <stop offset="0%" stopColor="rgba(255,200,160,0.10)"/>
-        <stop offset="30%" stopColor="rgba(255,140,80,0.10)"/>
-        <stop offset="60%" stopColor="rgba(168,85,247,0.12)"/>
+        <stop offset="0%" stopColor="rgba(var(--orange-raw),0.10)"/>
+        <stop offset="30%" stopColor="rgba(var(--orange-raw),0.10)"/>
+        <stop offset="60%" stopColor="rgba(var(--violet-raw),0.12)"/>
         <stop offset="100%" stopColor="rgba(10,10,12,0)"/>
       </radialGradient>
       <radialGradient id="hyb-cyan" cx="0.18" cy="0.55" r="0.5">
-        <stop offset="0%" stopColor="rgba(0,180,220,0.14)"/>
+        <stop offset="0%" stopColor="rgba(var(--cyan-raw),0.14)"/>
         <stop offset="100%" stopColor="rgba(10,10,12,0)"/>
       </radialGradient>
       <radialGradient id="hyb-violet" cx="0.88" cy="0.75" r="0.45">
-        <stop offset="0%" stopColor="rgba(168,85,247,0.14)"/>
+        <stop offset="0%" stopColor="rgba(var(--violet-raw),0.14)"/>
         <stop offset="100%" stopColor="rgba(10,10,12,0)"/>
       </radialGradient>
       <radialGradient id="hyb-vignette" cx="0.5" cy="0.5" r="0.7">
@@ -55,12 +55,12 @@ const NebulaArtHybrid = () => (
     <rect width="1440" height="1280" fill="url(#hyb-warm)"/>
 
     <g filter="url(#hyb-soft)" opacity="0.5">
-      <path d="M 100 360 Q 480 320 760 380 Q 1080 440 1340 420" stroke="rgba(255,180,140,0.32)" strokeWidth="22" fill="none" strokeLinecap="round"/>
-      <path d="M 0 880 Q 360 820 700 880 Q 1040 940 1440 880" stroke="rgba(120,80,200,0.28)" strokeWidth="32" fill="none" strokeLinecap="round"/>
+      <path d="M 100 360 Q 480 320 760 380 Q 1080 440 1340 420" stroke="rgba(var(--orange-raw),0.32)" strokeWidth="22" fill="none" strokeLinecap="round"/>
+      <path d="M 0 880 Q 360 820 700 880 Q 1040 940 1440 880" stroke="rgba(var(--violet-raw),0.28)" strokeWidth="32" fill="none" strokeLinecap="round"/>
     </g>
 
     <g filter="url(#hyb-soft)" opacity="0.55">
-      <path d="M 0 1080 Q 280 970 500 1040 Q 720 1110 940 1030 Q 1180 940 1440 1040 L 1440 1280 L 0 1280 Z" fill="rgba(50,30,60,0.55)"/>
+      <path d="M 0 1080 Q 280 970 500 1040 Q 720 1110 940 1030 Q 1180 940 1440 1040 L 1440 1280 L 0 1280 Z" fill="rgba(var(--violet-raw),0.15)"/>
     </g>
 
     {Array.from({length: 180}).map((_,i) => {
@@ -88,16 +88,16 @@ const NebulaBg = () => (
   <svg width="100%" height="100%" viewBox="0 0 1440 1080" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 pointer-events-none z-0">
     <defs>
       <radialGradient id="hb-warm" cx="0.62" cy="0.18" r="0.55">
-        <stop offset="0%"   stopColor="rgba(255,140,80,0.10)"/>
-        <stop offset="50%"  stopColor="rgba(168,85,247,0.12)"/>
+        <stop offset="0%"   stopColor="rgba(var(--orange-raw),0.10)"/>
+        <stop offset="50%"  stopColor="rgba(var(--violet-raw),0.12)"/>
         <stop offset="100%" stopColor="rgba(10,10,12,0)"/>
       </radialGradient>
       <radialGradient id="hb-cyan" cx="0.15" cy="0.55" r="0.45">
-        <stop offset="0%"   stopColor="rgba(0,180,220,0.12)"/>
+        <stop offset="0%"   stopColor="rgba(var(--cyan-raw),0.12)"/>
         <stop offset="100%" stopColor="rgba(10,10,12,0)"/>
       </radialGradient>
       <radialGradient id="hb-violet" cx="0.88" cy="0.78" r="0.42">
-        <stop offset="0%"   stopColor="rgba(168,85,247,0.10)"/>
+        <stop offset="0%"   stopColor="rgba(var(--violet-raw),0.10)"/>
         <stop offset="100%" stopColor="rgba(10,10,12,0)"/>
       </radialGradient>
       <filter id="hb-soft" x="-20%" y="-20%" width="140%" height="140%">
@@ -110,7 +110,7 @@ const NebulaBg = () => (
     <rect width="1440" height="1080" fill="url(#hb-warm)"/>
     
     <g filter="url(#hb-soft)" opacity="0.4">
-      <path d="M 100 280 Q 500 240 800 320 Q 1100 400 1360 360" stroke="rgba(255,180,140,0.25)" strokeWidth="18" fill="none" strokeLinecap="round"/>
+      <path d="M 100 280 Q 500 240 800 320 Q 1100 400 1360 360" stroke="rgba(var(--orange-raw),0.25)" strokeWidth="18" fill="none" strokeLinecap="round"/>
     </g>
 
     {Array.from({length: 120}).map((_,i) => {
@@ -133,17 +133,23 @@ const NebulaBg = () => (
 /* ─── CARD LAYOUT COMPONENT ──────────────────────────────────────────── */
 const Card = ({ children, accent = "neutral", padding = 24, className = '', style }) => {
   const accents = {
-    neutral: "rgba(255,255,255,0.04)",
-    cyan:    "rgba(0,240,255,0.10)",
-    violet:  "rgba(168,85,247,0.10)",
-    orange:  "rgba(255,107,0,0.08)",
-    green:   "rgba(0,214,138,0.08)",
-    red:     "rgba(255,59,92,0.08)",
+    neutral: "rgba(var(--cyan-raw), 0.04)",
+    cyan:    "rgba(var(--cyan-raw), 0.10)",
+    violet:  "rgba(var(--violet-raw), 0.10)",
+    orange:  "rgba(var(--orange-raw), 0.08)",
+    green:   "rgba(var(--green-raw), 0.08)",
+    red:     "rgba(var(--red-raw), 0.08)",
   };
   return (
     <div 
-      className={`relative overflow-hidden rounded-[20px] bg-gradient-to-b from-white/6 to-white/1 border border-white/6 backdrop-blur-xl shadow-2xl ${className}`}
-      style={{ padding, ...style }}
+      className={`relative overflow-hidden rounded-[20px] backdrop-blur-xl ${className}`}
+      style={{ 
+        padding,
+        background: 'var(--card-bg)',
+        border: 'var(--card-border)',
+        boxShadow: 'var(--card-shadow)',
+        ...style 
+      }}
     >
       <div 
         className="absolute inset-0 pointer-events-none"
