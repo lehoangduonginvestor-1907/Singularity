@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Singularity v2 · Site Planner Handoff</title>
+  
+  <!-- CDNs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & Babel Standalone -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Instrument Serif"', 'serif'],
+            body: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Roboto Mono"', 'monospace'],
+          },
+          colors: {
+            ink: {
+              50: '#050608',
+              100: '#0a0c12',
+              150: '#0f1219',
+              200: '#141823',
+              300: '#1c2230',
+              400: '#262d3e',
+            },
+            cyanSoft: '#7bf6ff',
+            violetSoft: '#c4a0fb',
+            orangeSoft: '#ff9b4d',
+            greenSoft: '#5cf2bd',
+            redSoft: '#ff8aa0',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: #050608;
+      color: #ffffff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    
+    /* Red Vision Mode CSS Filter */
+    .red-vision {
+      filter: hue-rotate(-30deg) saturate(1.45) brightness(0.88) contrast(1.08) !important;
+    }
+
+    /* Custom Leaflet Dark Popup Styles */
+    .leaflet-popup-content-wrapper {
+      background: rgba(10, 12, 18, 0.94) !important;
+      backdrop-filter: blur(16px) saturate(130%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(130%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45) !important;
+      color: #ffffff !important;
+      border-radius: 14px !important;
+    }
+    .leaflet-popup-tip {
+      background: rgba(10, 12, 18, 0.94) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    .leaflet-popup-content {
+      margin: 14px 18px !important;
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      line-height: 1.5 !important;
+    }
+    .leaflet-container a.leaflet-popup-close-button {
+      color: rgba(255, 255, 255, 0.4) !important;
+      font-size: 16px !important;
+      padding: 8px 10px 0 0 !important;
+      transition: color 0.2s !important;
+    }
+    .leaflet-container a.leaflet-popup-close-button:hover {
+      color: #ff8aa0 !important;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+  </style>
+</head>
+<body>
+  
+  <div id="root"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Interactive React Application Prototype -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    /* ── Icons ────────────────────────────────────────────────── */
+    const Icon = ({ name, size = 16, stroke = 1.5 }) => {
+      const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: stroke, strokeLinecap: "round", strokeLinejoin: "round" };
+      const icons = {
+        pin:          <svg {...p}><path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>,
+        compass:      <svg {...p}><circle cx="12" cy="12" r="9"/><path d="m16 8-2 6-6 2 2-6Z" fill="currentColor" fillOpacity="0.2"/></svg>,
+        clock:        <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+        mountain:     <svg {...p}><path d="m8 3 4 8 5-5 2 4h3L12 21 2 10h3Z"/></svg>,
+        moon:         <svg {...p}><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>,
+        star:         <svg {...p}><path d="m12 2 3 7 7 .6-5.3 4.7L18 22l-6-3.6L6 22l1.4-7.7L2 9.6 9 9Z"/></svg>,
+        layers:       <svg {...p}><path d="m12 3 10 5-10 5L2 8Z"/><path d="m2 13 10 5 10-5M2 18l10 5 10-5"/></svg>,
+        refresh:      <svg {...p}><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>,
+        plus:         <svg {...p}><path d="M12 5v14M5 12h14"/></svg>,
+        x:            <svg {...p}><path d="M18 6 6 18M6 6l12 12"/></svg>,
+        alert:        <svg {...p}><path d="M12 3 2 21h20Z"/><path d="M12 10v5M12 18v.5"/></svg>,
+        check:        <svg {...p}><path d="m5 13 4 4L19 7"/></svg>,
+        "chevron-down": <svg {...p}><path d="m6 9 6 6 6-6"/></svg>,
+        "arrow-up-right": <svg {...p}><path d="M7 17 17 7M9 7h8v8"/></svg>,
+        zap:          <svg {...p}><path d="M13 2 3 14h7l-1 8 10-12h-7Z"/></svg>,
+        target:       <svg {...p}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>,
+        eye:          <svg {...p}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>,
+        telescope:    <svg {...p}><path d="M3 14 17 7l3 5L6 19Zm5 0v6"/><circle cx="13" cy="20" r="1.5"/></svg>,
+        "zoom-in":    <svg {...p}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg>,
+        "zoom-out":   <svg {...p}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6"/></svg>,
+        filter:       <svg {...p}><path d="M3 5h18l-7 9v6l-4-2v-4Z"/></svg>,
+        globe:        <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>,
+      };
+      return icons[name] || null;
+    };
+
+    /* ── Mock Data ─────────────────────────────────────────── */
+    const MOCK_RESULTS = {
+      meta: {
+        moon_illum_pct: 86,
+        passed: 3,
+        vetoed: 2,
+        total_evaluated: 5,
+        sun_alt: -18.4
+      },
+      top5: [
+        {
+          id: "site-1",
+          name: "Sa Pa Observatory",
+          description: "Priority observation node. Favorable altitude above local haze layer.",
+          s_eff: 8.6,
+          time_mins: 320,
+          v_model: "9.2/10",
+          elevation: 1650,
+          dist_km: 280,
+          bortle: 2,
+          bortle_eff: 2,
+          lat: 22.337,
+          lon: 103.844,
+          reason: "Fried parameter r0 peak at 14.8mm. Exceptional transparency forecast."
+        },
+        {
+          id: "site-2",
+          name: "Tam Đảo Plateau",
+          description: "High-altitude balcony. Prone to micro-climatic fogging after midnight.",
+          s_eff: 6.4,
+          time_mins: 90,
+          v_model: "7.0/10",
+          elevation: 1140,
+          dist_km: 68,
+          bortle: 4,
+          bortle_eff: 4,
+          lat: 21.467,
+          lon: 105.642,
+          reason: "Moderate wind shear at 300hPa layer. Dew danger warning is currently inactive."
+        },
+        {
+          id: "site-3",
+          name: "Mộc Châu Highland",
+          description: "Wide field candidate. Light pollution dome visible on southern horizon.",
+          s_eff: 5.4,
+          time_mins: 210,
+          v_model: "6.1/10",
+          elevation: 1050,
+          dist_km: 185,
+          bortle: 5,
+          bortle_eff: 5,
+          lat: 20.844,
+          lon: 104.646,
+          reason: "Slight aerosol extinction penalty. Good visibility window before moonrise."
+        }
+      ],
+      vetoed: [
+        {
+          id: "site-v1",
+          name: "Hà Nội Observatory",
+          veto_reason: "Light Pollution (Bortle 8)",
+          dist_km: 12,
+          lat: 21.034,
+          lon: 105.820
+        },
+        {
+          id: "site-v2",
+          name: "Đồ Sơn Coastline",
+          veto_reason: "Dew Danger (Humidity 94%)",
+          dist_km: 105,
+          lat: 20.672,
+          lon: 106.784
+        }
+      ]
+    };
+
+    /* ── Colors & Styles ───────────────────────────────────── */
+    const getScoreColor = (s) => s >= 7 ? "#7bf6ff" : s >= 5 ? "#5cf2bd" : s >= 3 ? "#ff9b4d" : "#ff8aa0";
+    const getScoreTone = (s) => s >= 7 ? "cyan" : s >= 5 ? "green" : s >= 3 ? "orange" : "red";
+
+    const TONE_MAP = {
+      cyan:    { fg: "#7bf6ff", glow: "rgba(0,240,255,0.45)",  bg: "rgba(0,240,255,0.10)",   border: "rgba(0,240,255,0.3)" },
+      violet:  { fg: "#c4a0fb", glow: "rgba(168,85,247,0.45)", bg: "rgba(168,85,247,0.10)",  border: "rgba(168,85,247,0.3)" },
+      orange:  { fg: "#ff9b4d", glow: "rgba(255,107,0,0.45)",  bg: "rgba(255,107,0,0.10)",   border: "rgba(255,107,0,0.3)" },
+      green:   { fg: "#5cf2bd", glow: "rgba(0,214,138,0.45)",  bg: "rgba(0,214,138,0.10)",   border: "rgba(0,214,138,0.3)" },
+      red:     { fg: "#ff8aa0", glow: "rgba(255,59,92,0.45)",  bg: "rgba(255,59,92,0.10)",   border: "rgba(255,59,92,0.3)" },
+      neutral: { fg: "rgba(255,255,255,0.7)", glow: "rgba(255,255,255,0.1)", bg: "rgba(255,255,255,0.04)", border: "rgba(255,255,255,0.08)" },
+    };
+
+    const BORTLE_COLORS = [
+      "#e0e0ff","#b8b8ff","#80b0ff","#60d880","#e0d040",
+      "#e0a030","#e05050","#d02080","#a00000"
+    ];
+
+    /* ── Sub-components ────────────────────────────────────── */
+    const BortleMicroBar = ({ value, size = "normal" }) => {
+      const v = Math.min(9, Math.max(1, Math.round(value)));
+      const h = size === "small" ? 3 : 4;
+      const gap = size === "small" ? 1 : 2;
+      return (
+        <div className="flex" style={{ gap }}>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} style={{
+              width: size === "small" ? 8 : 12, height: h, borderRadius: 1,
+              background: i < v ? BORTLE_COLORS[i] : "rgba(255,255,255,0.06)",
+              opacity: i < v ? 1 : 0.4,
+              transition: "background 0.3s, opacity 0.3s",
+            }} />
+          ))}
+        </div>
+      );
+    };
+
+    const Card = ({ children, accent = "neutral", padding = 24, style, onClick, className }) => {
+      const accents = {
+        neutral: "rgba(255,255,255,0.04)",   cyan: "rgba(0,240,255,0.10)",
+        violet: "rgba(168,85,247,0.10)",      orange: "rgba(255,107,0,0.08)",
+        green: "rgba(0,214,138,0.08)",        red: "rgba(255,59,92,0.08)",
+      };
+      return (
+        <div onClick={onClick} className={`${className} relative overflow-hidden`} style={{
+          padding,
+          borderRadius: 20,
+          background: "linear-gradient(180deg, rgba(20,20,28,0.6) 0%, rgba(10,10,14,0.75) 100%)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)",
+          ...style,
+        }}>
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: `radial-gradient(320px 200px at 100% 0%, ${accents[accent]}, transparent 60%)`,
+          }} />
+          <div className="relative z-10">{children}</div>
+        </div>
+      );
+    };
+
+    const Chip = ({ children, tone = "neutral", icon }) => {
+      const t = TONE_MAP[tone];
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] uppercase font-mono tracking-widest" style={{
+          background: t.bg, border: `1px solid ${t.border}`, color: t.fg,
+        }}>
+          {icon && <Icon name={icon} size={11} />} {children}
+        </span>
+      );
+    };
+
+    const SectionHeader = ({ eyebrow, title, italicWord, sub, right }) => (
+      <div className="flex justify-between items-start md:items-end flex-wrap gap-4 mb-5">
+        <div>
+          {eyebrow && (
+            <div className="font-mono text-[10.5px] tracking-widest uppercase text-white/35 font-medium mb-2">{eyebrow}</div>
+          )}
+          <h2 className="m-0 font-display font-normal text-3xl tracking-tight text-white leading-none">
+            {title}{italicWord && <span className="italic text-violetSoft"> {italicWord}</span>}.
+          </h2>
+          {sub && <div className="mt-2 text-[13.5px] text-white/55 leading-relaxed">{sub}</div>}
+        </div>
+        {right}
+      </div>
+    );
+
+    /* ── Live Leaflet Map Component ────────────────────────── */
+    function MapSection({ userLat, userLon, top5, vetoed }) {
+      const mapRef = useRef(null);
+      const [zoom, setZoom] = useState(7);
+
+      useEffect(() => {
+        // Initialize map
+        const map = L.map('leaflet-map-canvas', {
+          center: [userLat, userLon],
+          zoom: zoom,
+          zoomControl: false,
+          attributionControl: false
+        });
+        
+        mapRef.current = map;
+
+        // Dark map tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        // Add user marker
+        L.circleMarker([userLat, userLon], {
+          radius: 7,
+          fillColor: "#ffffff",
+          fillOpacity: 1,
+          color: "#c4a0fb",
+          weight: 3
+        }).addTo(map).bindPopup(`<div style="color: #fff; font-size: 12px; font-family: sans-serif;">
+          <strong>Your Position</strong><br/>${userLat.toFixed(4)}°N, ${userLon.toFixed(4)}°E
+        </div>`);
+
+        // Add candidate sites markers
+        top5.forEach((s, idx) => {
+          const scoreColor = getScoreColor(s.s_eff);
+          L.circleMarker([s.lat, s.lon], {
+            radius: 9,
+            fillColor: scoreColor,
+            fillOpacity: 0.85,
+            color: "rgba(255,255,255,0.6)",
+            weight: 2
+          }).addTo(map).bindPopup(`<div style="color: #fff; font-size: 12px; font-family: sans-serif; min-width: 140px;">
+            <strong style="display: block; margin-bottom: 4px; font-size: 13px; font-family: Georgia, serif;">${s.name}</strong>
+            <span style="color: #7bf6ff; font-weight: 700; font-family: monospace;">Score: ${s.s_eff.toFixed(1)}/10</span><br/>
+            <span style="font-size: 10px; color: rgba(255,255,255,0.6); font-family: monospace;">${s.dist_km}km · ~${s.time_mins}min</span>
+          </div>`);
+        });
+
+        // Add vetoed markers
+        vetoed.forEach((s) => {
+          L.circleMarker([s.lat, s.lon], {
+            radius: 5,
+            fillColor: "rgba(255,138,160,0.5)",
+            fillOpacity: 0.35,
+            color: "rgba(255,138,160,0.5)",
+            weight: 1
+          }).addTo(map).bindPopup(`<div style="color: #fff; font-size: 12px; font-family: sans-serif; min-width: 140px;">
+            <strong style="display: block; margin-bottom: 4px; font-size: 13px; font-family: Georgia, serif;">${s.name}</strong>
+            <span style="color: #ff8aa0; font-size: 11px; font-family: monospace;">VETOED: ${s.veto_reason}</span>
+          </div>`);
+        });
+
+        return () => {
+          map.remove();
+        };
+      }, [userLat, userLon, top5, vetoed]);
+
+      const handleZoomIn = () => {
+        if (mapRef.current) {
+          const newZoom = Math.min(18, mapRef.current.getZoom() + 1);
+          mapRef.current.setZoom(newZoom);
+          setZoom(newZoom);
+        }
+      };
+
+      const handleZoomOut = () => {
+        if (mapRef.current) {
+          const newZoom = Math.max(3, mapRef.current.getZoom() - 1);
+          mapRef.current.setZoom(newZoom);
+          setZoom(newZoom);
+        }
+      };
+
+      return (
+        <div className="mb-6 relative z-10">
+          <Card padding={0} style={{ overflow: "hidden" }}>
+            <div className="px-6 pt-5 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-lg grid place-items-center bg-violet-900/10 text-violetSoft">
+                  <Icon name="globe" size={14} />
+                </div>
+                <div>
+                  <div className="font-mono text-[9.5px] tracking-widest uppercase text-white/35">FIELD MAP</div>
+                  <div className="font-display text-lg text-white mt-0.5">
+                    Candidate <span className="italic">coverage</span>
+                  </div>
+                </div>
+              </div>
+              <Chip tone="violet" icon="pin">
+                {userLat.toFixed(3)}°N · {userLon.toFixed(3)}°E
+              </Chip>
+            </div>
+
+            <div className="h-[400px] mt-4 relative">
+              <div id="leaflet-map-canvas" className="w-full h-full bg-[#0a0a0c]"></div>
+              
+              {/* Custom Zoom Controls */}
+              <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1">
+                <button 
+                  onClick={handleZoomIn} 
+                  className="w-[34px] h-[34px] rounded-lg bg-ink-50/90 backdrop-blur-md border border-white/8 text-white/70 hover:text-white grid place-items-center transition-all duration-200"
+                >
+                  <Icon name="zoom-in" size={15} />
+                </button>
+                <button 
+                  onClick={handleZoomOut} 
+                  className="w-[34px] h-[34px] rounded-lg bg-ink-50/90 backdrop-blur-md border border-white/8 text-white/70 hover:text-white grid place-items-center transition-all duration-200"
+                >
+                  <Icon name="zoom-out" size={15} />
+                </button>
+              </div>
+
+              {/* Map Legend */}
+              <div className="absolute bottom-3 left-3 z-[1000] flex gap-3.5 items-center bg-ink-50/90 backdrop-blur-md border border-white/6 px-3.5 py-1.5 rounded-lg font-mono text-[9.5px] uppercase tracking-wider text-white/50">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-white border border-violetSoft" />
+                  <span>YOU</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-cyanSoft" />
+                  <span>VIABLE</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-redSoft/40" />
+                  <span>VETOED</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    /* ── Site Card ─────────────────────────────────────────── */
+    function SiteCard({ site, rank }) {
+      const bortleVal = site.bortle_eff ?? site.bortle;
+      const scoreColor = getScoreColor(site.s_eff);
+      const scoreTone = getScoreTone(site.s_eff);
+      const t = TONE_MAP[scoreTone];
+      const isCustom = site._custom;
+
+      const metrics = [
+        { icon: "clock",    label: "DRIVE",   value: `${site.time_mins}m`,   tone: "neutral" },
+        { icon: "eye",      label: "V-MODEL", value: `${site.v_model}`,      tone: "cyan" },
+        { icon: "mountain", label: "ELEV",    value: `${site.elevation}m`,   tone: "neutral" },
+        { icon: "compass",  label: "DIST",    value: `${site.dist_km}km`,    tone: "neutral" },
+      ];
+
+      return (
+        <Card accent={scoreTone} padding={0} className="transition-all duration-300">
+          <div className="px-7 py-6">
+            <div className="flex items-start justify-between gap-5">
+              <div className="flex-1 min-w-0">
+                <div className="flex gap-2 items-center mb-2.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[10px] uppercase font-bold tracking-widest" style={{
+                    background: `${scoreColor}18`, border: `1px solid ${scoreColor}40`, color: scoreColor
+                  }}>
+                    #{rank} {rank === 1 ? "PRIORITY" : rank === 2 ? "SECONDARY" : "ALT"}
+                  </span>
+                  {isCustom && <Chip tone="violet">CUSTOM</Chip>}
+                </div>
+
+                <h3 className="m-0 font-display text-3xl font-normal tracking-tight text-white leading-none">
+                  {site.name}
+                </h3>
+                {site.description && (
+                  <p className="mt-1.5 mb-0 text-[13px] text-white/45 leading-relaxed">
+                    {site.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Radial gauge for score */}
+              <div className="relative w-[88px] h-[88px] shrink-0">
+                <svg width="88" height="88" viewBox="0 0 88 88">
+                  <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+                  <circle cx="44" cy="44" r="36" fill="none" stroke={scoreColor} strokeWidth="3"
+                    strokeDasharray={`${2 * Math.PI * 36 * (site.s_eff / 10)} ${2 * Math.PI * 36}`}
+                    strokeLinecap="round" transform="rotate(-90 44 44)"
+                    style={{ filter: `drop-shadow(0 0 4px ${t.glow})` }} />
+                </svg>
+                <div className="absolute inset-0 grid place-items-center text-center">
+                  <div>
+                    <span className="font-display text-[28px] text-white leading-none" style={{
+                      textShadow: `0 0 16px ${t.glow}`
+                    }}>{site.s_eff.toFixed(1)}</span>
+                    <div className="font-mono text-[8px] text-white/35 tracking-widest mt-0.5">OF 10</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Metrics grid */}
+            <div className="grid grid-cols-4 gap-2 my-5">
+              {metrics.map(m => {
+                const mt = TONE_MAP[m.tone];
+                return (
+                  <div key={m.label} className="p-2.5 rounded-xl bg-white/2 border border-white/4">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="opacity-70" style={{ color: mt.fg }}><Icon name={m.icon} size={11} /></span>
+                      <span className="font-mono text-[9px] tracking-widest uppercase text-white/35 font-medium">{m.label}</span>
+                    </div>
+                    <div className="font-mono text-sm font-semibold" style={{
+                      color: m.tone === "cyan" ? "var(--cyanSoft)" : "rgba(255,255,255,0.85)"
+                    }}>{m.value}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bortle bar */}
+            <div className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl bg-white/1 border border-white/4">
+              <span className="font-mono text-[9.5px] tracking-widest uppercase text-white/40 font-medium">BORTLE {bortleVal}</span>
+              <BortleMicroBar value={bortleVal} />
+              {site.bortle_eff > site.bortle && (
+                <span className="font-mono text-[9.5px] text-orangeSoft ml-auto tracking-wide">
+                  +{site.bortle_eff - site.bortle} LUNAR
+                </span>
+              )}
+            </div>
+
+            {/* Analysis */}
+            {site.reason && (
+              <div className="mt-3.5 pt-3.5 border-t border-white/4 text-[12.5px] text-white/55 leading-relaxed">
+                <span className="text-white/30 font-mono text-[9.5px] tracking-widest uppercase mr-1">ANALYSIS</span>
+                {site.reason}
+              </div>
+            )}
+          </div>
+        </Card>
+      );
+    }
+
+    /* ── Vetoed Row ────────────────────────────────────────── */
+    function VetoedRow({ vetoed }) {
+      const [open, setOpen] = useState(false);
+      if (!vetoed?.length) return null;
+      return (
+        <div className="mb-5 relative z-10">
+          <div
+            onClick={() => setOpen(!open)}
+            className="flex items-center gap-4 px-5 py-3.5 rounded-xl cursor-pointer bg-white/2 border border-white/5 hover:bg-white/5 transition-all duration-200"
+          >
+            <div className="w-[34px] h-[34px] rounded-lg shrink-0 bg-red-500/10 border border-red-500/20 grid place-items-center text-redSoft">
+              <Icon name="x" size={14} />
+            </div>
+            <div className="flex-1">
+              <div className="font-display text-lg text-white">
+                Vetoed <span className="italic">sites</span>
+              </div>
+              <div className="text-[12px] text-white/45 mt-0.5">
+                Sites rejected by physics filters
+              </div>
+            </div>
+            <span className="font-mono text-sm text-redSoft bg-red-500/10 px-2.5 py-0.5 rounded-full">{vetoed.length}</span>
+            <div className="text-white/40 transition-transform duration-300" style={{
+              transform: open ? "rotate(180deg)" : "none"
+            }}>
+              <Icon name="chevron-down" size={16} />
+            </div>
+          </div>
+          
+          <div className="overflow-hidden transition-all duration-300" style={{
+            maxHeight: open ? "500px" : "0",
+            opacity: open ? 1 : 0
+          }}>
+            <div className="pt-3 flex flex-col gap-1.5">
+              {vetoed.map((s, i) => (
+                <div key={s.id || i} className="flex items-center gap-3.5 px-4 py-2.5 rounded-xl bg-white/1 border border-white/4">
+                  <span className="font-mono text-[10px] text-white/30 tracking-widest min-w-[22px]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="font-display text-base text-white/70 flex-1">{s.name}</span>
+                  <span className="font-mono text-[10px] text-redSoft tracking-wide max-w-[280px]">VETOED: {s.veto_reason}</span>
+                  <span className="font-mono text-[10px] text-white/30">{s.dist_km}km</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── Main Component ────────────────────────────────────── */
+    function SitePlannerApp() {
+      const [redVision, setRedVision] = useState(false);
+      const [results, setResults] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [showAdd, setShowAdd] = useState(false);
+      
+      const [addName, setAddName] = useState("");
+      const [addLat, setAddLat] = useState("");
+      const [addLon, setAddLon] = useState("");
+      
+      const [customSpots, setCustomSpots] = useState([
+        { id: "custom-1", name: "Secret Peak (Bắc Sơn)", lat: 21.905, lon: 106.312, _custom: true }
+      ]);
+
+      const handleRunDiagnostics = () => {
+        setLoading(true);
+        setResults(null);
+        setTimeout(() => {
+          setResults(MOCK_RESULTS);
+          setLoading(false);
+        }, 1500);
+      };
+
+      const handleSaveSpot = () => {
+        const lat = parseFloat(addLat), lon = parseFloat(addLon);
+        if (!addName.trim() || isNaN(lat) || isNaN(lon)) return;
+        setCustomSpots([...customSpots, {
+          id: `custom-${Date.now()}`,
+          name: addName.trim(),
+          lat,
+          lon,
+          _custom: true
+        }]);
+        setAddName(""); setAddLat(""); setAddLon(""); setShowAdd(false);
+      };
+
+      const handleRemoveSpot = (id) => {
+        setCustomSpots(customSpots.filter(s => s.id !== id));
+      };
+
+      return (
+        <div className={`sg-bg min-h-screen px-6 py-10 md:px-12 md:py-16 relative ${redVision ? 'red-vision' : ''}`}>
+          
+          {/* Volumetric Nebula Background Glows */}
+          <div className="absolute top-[-10%] left-[-20%] w-[800px] h-[800px] rounded-full bg-purple-600/5 blur-[80px] pointer-events-none z-0" />
+          <div className="absolute bottom-[10%] right-[-15%] w-[700px] h-[700px] rounded-full bg-cyan-400/4 blur-[60px] pointer-events-none z-0" />
+
+          {/* Floating Topbar Control Panel */}
+          <header className="absolute top-4 right-4 md:top-6 md:right-8 z-[1100]">
+            <button 
+              onClick={() => setRedVision(!redVision)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors text-xs font-mono tracking-widest ${
+                redVision 
+                  ? 'bg-red-500/20 border-red-500/30 text-red-400 font-bold' 
+                  : 'bg-white/5 border-white/10 hover:bg-white/10 text-white/70'
+              }`}
+            >
+              <span>{redVision ? '🔴 RED VISION ON' : '👁️ RED VISION OFF'}</span>
+            </button>
+          </header>
+
+          <div className="max-w-[1200px] mx-auto relative z-10">
+            {/* Main Header */}
+            <div className="mb-8 flex justify-between items-end flex-wrap gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/4 border border-white/8 mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violetSoft shadow-[0_0_8px_#c4a0fb]" />
+                  <span className="font-mono text-[10.5px] text-white/65 tracking-widest uppercase">SITE PLANNER</span>
+                </div>
+                <h1 className="m-0 font-display text-5xl font-normal tracking-tight text-white leading-none">
+                  Find the <span className="italic text-violetSoft">darkest</span> sky.
+                </h1>
+                <p className="mt-3.5 mb-0 text-sm text-white/50 leading-relaxed max-w-[560px]">
+                  Physics-first ranking across <span className="font-mono text-white/70">{results ? results.top5.length + vetoed.length : 5}</span> candidate sites within 2000 km of your position.
+                </p>
+              </div>
+
+              <button
+                onClick={handleRunDiagnostics}
+                disabled={loading}
+                className="sp-btn-primary"
+                style={loading ? {
+                  background: "rgba(168,85,247,0.10)",
+                  color: "var(--violetSoft)",
+                  boxShadow: "none",
+                  cursor: "wait",
+                } : {}}
+              >
+                <Icon name={loading ? "refresh" : "target"} size={16} />
+                {loading ? "Analyzing locations..." : "Run Site Diagnostics"}
+              </button>
+            </div>
+
+            {/* Results metadata chips */}
+            {results && (
+              <div className="flex gap-2 flex-wrap items-center mb-5">
+                <Chip tone={results.meta.moon_illum_pct > 60 ? "orange" : "green"} icon="moon">
+                  MOON {results.meta.moon_illum_pct}%
+                </Chip>
+                <Chip tone="cyan" icon="check">
+                  VIABLE {results.meta.passed}/{results.meta.total_evaluated}
+                </Chip>
+                <Chip tone="red" icon="x">
+                  VETOED {results.meta.vetoed}
+                </Chip>
+                <Chip tone="neutral">
+                  SUN ALT {results.meta.sun_alt.toFixed(1)}°
+                </Chip>
+              </div>
+            )}
+
+            {/* Map Section */}
+            {results && (
+              <MapSection
+                userLat={20.886} userLon={105.755}
+                top5={results.top5} vetoed={results.vetoed}
+              />
+            )}
+
+            {/* Ranked Sites List */}
+            {results && results.top5.length > 0 && (
+              <div className="mb-6">
+                <SectionHeader
+                  eyebrow={`RANKED SITES · TOP ${results.top5.length}`}
+                  title="Best observation"
+                  italicWord="sites"
+                  sub="Ranked by physics score — seeing, transparency, light pollution, lunar penalty."
+                />
+                <div className="flex flex-col gap-3">
+                  {results.top5.map((site, i) => (
+                    <SiteCard key={site.id} site={site} rank={i + 1} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Vetoed Row */}
+            {results && <VetoedRow vetoed={results.vetoed} />}
+
+            {/* Custom locations section */}
+            <div className="pt-6 mt-6 border-t border-white/5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg grid place-items-center bg-violet-900/10 text-violetSoft">
+                    <Icon name="pin" size={13} />
+                  </div>
+                  <div>
+                    <div className="font-mono text-[9.5px] tracking-widest uppercase text-white/35">CUSTOM LOCATIONS</div>
+                    <div className="font-display text-lg text-white mt-0.5">
+                      Private <span className="italic">spots</span>
+                    </div>
+                  </div>
+                  <span className="font-mono text-[10px] text-violetSoft bg-purple-900/10 px-2 py-0.5 rounded-full ml-1">{customSpots.length}</span>
+                </div>
+                <button
+                  onClick={() => setShowAdd(!showAdd)}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 cursor-pointer ${
+                    showAdd 
+                      ? 'bg-red-500/10 border-red-500/20 text-redSoft' 
+                      : 'bg-purple-900/10 border-purple-500/20 text-violetSoft'
+                  }`}
+                >
+                  <Icon name={showAdd ? "x" : "plus"} size={13} />
+                  {showAdd ? "Cancel" : "Add spot"}
+                </button>
+              </div>
+
+              {/* Add Spot Form */}
+              <div className="overflow-hidden transition-all duration-300" style={{
+                maxHeight: showAdd ? "250px" : "0",
+                opacity: showAdd ? 1 : 0
+              }}>
+                <Card accent="violet" padding={20} className="mb-4">
+                  <div className="flex gap-2.5 items-end flex-wrap">
+                    <div className="flex-1 min-w-[160px]">
+                      <label className="block font-mono text-[9.5px] tracking-widest uppercase text-white/40 mb-1.5">NAME</label>
+                      <input 
+                        value={addName} onChange={e => setAddName(e.target.value)}
+                        placeholder="My dark site" className="sp-input w-full" 
+                      />
+                    </div>
+                    <div className="w-[110px]">
+                      <label className="block font-mono text-[9.5px] tracking-widest uppercase text-white/40 mb-1.5">LAT</label>
+                      <input 
+                        value={addLat} onChange={e => setAddLat(e.target.value)}
+                        placeholder="21.034" className="sp-input w-full" 
+                      />
+                    </div>
+                    <div className="w-[110px]">
+                      <label className="block font-mono text-[9.5px] tracking-widest uppercase text-white/40 mb-1.5">LON</label>
+                      <input 
+                        value={addLon} onChange={e => setAddLon(e.target.value)}
+                        placeholder="105.820" className="sp-input w-full" 
+                      />
+                    </div>
+                    <button 
+                      onClick={handleSaveSpot}
+                      className="px-4 py-2.5 rounded-full cursor-pointer bg-purple-900/20 border border-purple-500/40 text-violetSoft font-semibold text-xs flex items-center gap-1.5 transition-all duration-200"
+                    >
+                      <Icon name="check" size={13} /> Save
+                    </button>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Spots tags list */}
+              {customSpots.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {customSpots.map(s => (
+                    <div key={s.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-900/5 border border-purple-500/20 text-[12px] text-white/80">
+                      <span className="text-violetSoft"><Icon name="pin" size={12} /></span>
+                      <span className="font-semibold">{s.name}</span>
+                      <span className="font-mono text-[10px] text-white/40">{s.lat.toFixed(3)}, {s.lon.toFixed(3)}</span>
+                      <button
+                        onClick={() => handleRemoveSpot(s.id)}
+                        className="bg-none border-none text-redSoft/60 hover:text-redSoft cursor-pointer p-0 grid place-items-center transition-colors duration-200"
+                      >
+                        <Icon name="x" size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {results && (
+              <div className="mt-8 pt-4 border-t border-white/5 flex justify-between items-center font-mono text-[10.5px] text-white/30 tracking-wider">
+                <div className="flex gap-5">
+                  <span>RADIUS 2000KM</span>
+                  <span>MODELS: SEEING + BORTLE + LUNAR + ELEV</span>
+                </div>
+                <span>SINGULARITY SITE PLANNER · v1.0</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Mount Application
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<SitePlannerApp />);
+  </script>
+</body>
+</html>
