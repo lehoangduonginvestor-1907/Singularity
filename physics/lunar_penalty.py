@@ -108,6 +108,7 @@ def scattering_function(rho_deg: float) -> float:
             --> Source: Angstrom (1929)
 
     Source: Krisciunas & Schaefer (1991), PASP 103:1033, eq.21
+    Note: This is the normalized phase function; the constant 3.84 is absorbed into i0.
     """
     # TODO: Validate rho_deg trong [0, 180]
     if rho_deg < 0 or rho_deg > 180: 

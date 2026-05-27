@@ -161,7 +161,18 @@ def cn2_with_wind_shear(cn2_base: float, shear: float, alpha: float = 0.1) -> fl
     Physics:
         cn2_corrected = cn2_base * (1 + alpha * shear^2)
 
-    Source: Tatarski (1961) ch.4
+    Source: Empirical heuristic correction — NOT from Tatarski (1961).
+        Concept: wind shear generates mechanical turbulence -> increases Cn2.
+        Functional form (1 + alpha * S^2) is ad-hoc, not derived from first principles.
+        For physics-based approach, consider Richardson number: Ri = N^2 / S^2
+        where turbulence occurs when Ri < 0.25.
+        Ref: Dewan et al. (1993), Trinquet & Vernin (2007)
+
+    Dimensional note:
+        S has units s^-1, so alpha should carry units s^2 for dimensional
+        consistency. Current alpha=0.1 is treated as dimensionless, which means
+        the correction is numerically small (~1e-4) for typical shear values.
+
     Note:
         alpha = 0.1 la gia tri khoi diem chua co ground truth.
         SAU KHI co 30 dem FWHM data: fine-tune alpha bang regression.
@@ -171,7 +182,7 @@ def cn2_with_wind_shear(cn2_base: float, shear: float, alpha: float = 0.1) -> fl
     cn2_fixed = cn2_base * (1.0 + alpha * shear ** 2)
     return cn2_fixed
 
-def hv57_profile(heights_m: np.ndarray, v_rms_ms: float, cn2_ground: float) -> np.ndarray:
+def hv57_profile(heights_m: np.ndarray, v_rms_ms: float, cn2_ground: float, asl_site_m: float = 0.0) -> np.ndarray:
     """
     Tinh Cn2 profile lien tuc theo do cao dua tren HV57 model.
 
@@ -183,6 +194,8 @@ def hv57_profile(heights_m: np.ndarray, v_rms_ms: float, cn2_ground: float) -> n
         cn2_ground: Cn2 mat dat (m^-2/3) tu tatarski_cn2() tai 1000hPa
                     He so A trong HV57 -- calibrate bang ESP32
                     Thanh Oai khac noi thanh Ha Noi -- phai do rieng
+        asl_site_m: Do cao so voi muc nuoc bien (ASL) cua tram quan trac (m).
+                    Dung de tinh toan dung tang Jet stream va Upper atmosphere.
 
     Returns:
         cn2_profile: Mang Cn2 tai tung do cao (m^-2/3)
@@ -191,17 +204,17 @@ def hv57_profile(heights_m: np.ndarray, v_rms_ms: float, cn2_ground: float) -> n
     Physics (Loai 2 -- HV57 model, Valley 1980):
         3 thanh phan:
 
-        Term 1 (Jet stream, manh nhat 8-12km):
-        HV57_A1 * (v_rms_ms/HV57_V0)^2 * (1e-5*h)^10 * exp(-h/1000)
-        --> Khi h=0: term1=0 vi (1e-5*0)^10=0
-            Jet stream khong anh huong mat dat -- dung vat ly
+        Term 1 (Jet stream, manh nhat 8-12km ASL):
+        HV57_A1 * (v_rms_ms/HV57_V0)^2 * (1e-5*h_asl)^10 * exp(-h_asl/1000)
+        --> Tinh theo do cao tuyet doi ASL
 
         Term 2 (Upper atmosphere, hang so nen):
-        HV57_C2 * exp(-h/1500)
+        HV57_C2 * exp(-h_asl/1500)
+        --> Tinh theo do cao tuyet doi ASL
 
-        Term 3 (Ground layer, calibrate ESP32):
-        cn2_ground * exp(-h/100)
-        --> Giam nhanh theo do cao, chi anh huong 0-500m
+        Term 3 (Ground layer, local boundary layer):
+        cn2_ground * exp(-h_agl/100)
+        --> Giam nhanh theo do cao cuc bo AGL, chi anh huong 0-500m
 
     Source: Valley (1980), AGARD Lecture Series No.80
 
@@ -209,13 +222,16 @@ def hv57_profile(heights_m: np.ndarray, v_rms_ms: float, cn2_ground: float) -> n
         Dung vectorized NumPy -- KHONG dung for loop.
         heights_m la ndarray, cac phep tinh ap dung cho ca mang.
     """
-    # Tinh term1 (vectorized tren toan bo heights_m):
-    term1 = HV57_A1 * (v_rms_ms / HV57_V0) ** 2 * (1e-5 * heights_m) ** 10 * np.exp(-heights_m / 1000.0)
+    # Tinh toan chieu cao tuyet doi (ASL)
+    heights_asl = heights_m + asl_site_m
+
+    # Tinh term1 (vectorized tren toan bo heights_asl):
+    term1 = HV57_A1 * (v_rms_ms / HV57_V0) ** 2 * (1e-5 * heights_asl) ** 10 * np.exp(-heights_asl / 1000.0)
 
     # Tinh term2 (vectorized):
-    term2 = HV57_C2 * np.exp(-heights_m / 1500.0)
+    term2 = HV57_C2 * np.exp(-heights_asl / 1500.0)
 
-    # Tinh term3 (vectorized):
+    # Tinh term3 (vectorized theo do cao cuc bo AGL):
     term3 = cn2_ground * np.exp(-heights_m / 100.0)
 
     # cn2_profile = term1 + term2 + term3

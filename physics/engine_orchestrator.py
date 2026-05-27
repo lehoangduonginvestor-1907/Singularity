@@ -55,6 +55,7 @@ class SingularityOrchestrator:
             
         api = {
             "aqi": surface_data['aqi'],
+            "pm2_5": surface_data.get('pm2_5', 15.0),
             "cloud_cover": surface_data['cloud_cover'],
             "moon_phase_deg": ephemeris_data['moon_phase'],
             "moon_alt_deg": moon_alt,
@@ -137,7 +138,7 @@ if __name__ == "__main__":
         {'pressure': 300.0, 'temp': -40.0, 'wind_u': 25.0, 'wind_v': 15.0, 'wind_speed': 29.1} 
     ]
     surface_mock = {
-        'pressure': 1013.25, 'temp': 25.0, 'rh': 80.0, 'aqi': 50.0, 'cloud_cover': 0.0, 't_lens_c': 22.0
+        'pressure': 1013.25, 'temp': 25.0, 'rh': 80.0, 'aqi': 50.0, 'pm2_5': 15.0, 'cloud_cover': 0.0, 't_lens_c': 22.0
     }
     
     payload = SingularityOrchestrator.map_and_execute(ephemeris_mock, atmos_mock, surface_mock)

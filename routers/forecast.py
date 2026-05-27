@@ -110,6 +110,7 @@ def get_debug_forecast(
                 "pressure_hpa": round(float(surface["pressure"]), 1),
                 "cloud_cover_pct": round(float(surface["cloud_cover"]), 1),
                 "aqi": round(float(surface["aqi"]), 1),
+                "pm2_5": round(float(surface.get("pm2_5", 15.0)), 1),
             },
 
             # ── Atmospheric Profile Layers (Open-Meteo) ──

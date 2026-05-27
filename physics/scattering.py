@@ -71,75 +71,63 @@ def hygroscopic_growth(rh_percent: float, gamma: float = 0.5) -> float:
     return f_rh
 
 
-def k_mie(aqi: float, rh_percent: float,
-          beta: float = 0.02, alpha: float = 0.8,
+def k_mie(pm2_5: float, rh_percent: float,
+          mee_m2_g: float = 4.0, scale_height_km: float = 1.5,
           gamma: float = 0.5) -> float:
     """
-    Tinh he so tat Mie (bui, aerosol).
+    Tinh he so tat Mie (bui, aerosol) tu nguyen ly vat ly (First Principles).
 
     Args:
-        aqi: Chi so bui tu API (OpenAQ)
-        rh_percent: Do am tuong doi (%) tu BME280
-        beta: He so empirical, can fine-tune bang TSL2591
-              Gia tri khoi diem: 0.02
-        alpha: He so empirical (mu ong tru AQI)
-               Gia tri khoi diem: 0.8
+        pm2_5: Nong do bui min PM2.5 tu API (ug/m3)
+        rh_percent: Do am tuong doi (%) tu BME280 / API
+        mee_m2_g: Mass Extinction Efficiency (hieu suat tat theo khoi luong) (m2/g), mac dinh 4.0
+        scale_height_km: Chieu cao quy mo khi quyen cho aerosol (km), mac dinh 1.5
         gamma: He so hygroscopic growth
-               Source: Shettle & Fenn (1979)
 
     Returns:
-        k_mie: He so tat Mie (khong co don vi)
+        tau_mie: Do day quang hoc Mie (Mie optical depth, khong don vi)
 
     Physics:
-        k_Mie = beta * AQI^alpha * f(RH)
+        k_Mie (km^-1) = PM2.5 (ug/m3) * 1e-6 g/ug * mee_m2_g (m2/g) * 1000 m/km * f(RH)
+                      = PM2.5 * 1e-6 * 4.0 * 1000 * f(RH)
+                      = PM2.5 * 0.004 * f(RH)
+        tau_Mie = k_Mie * scale_height_km
+                = PM2.5 * 0.004 * 1.5 * f(RH)
+                = PM2.5 * 0.006 * f(RH)
 
-        beta, alpha: fine-tune bang TSL2591 sau khi co data
-        Khong duoc tu dat so nay -- phai learned tu data (Rule 5)
-
-    Source: Angstrom (1929) + Shettle & Fenn (1979)
+    Source: Angstrom (1929) + Shettle & Fenn (1979) + First Principles MEE Model
     """
-    # Validate aqi >= 0
-    if aqi < 0 :
-        raise ValueError(f"Invalid parameters : aqi = {aqi}. Must be >= 0")
-
+    # Validate pm2_5 >= 0
+    if pm2_5 < 0:
+        raise ValueError(f"Invalid parameters: pm2_5 = {pm2_5}. Must be >= 0")
 
     # Goi hygroscopic_growth(rh_percent, gamma) de lay f_rh
     f_rh = hygroscopic_growth(rh_percent, gamma)
 
-
-    # Tinh k_mie = beta * aqi ^ alpha * f_rh
-
-    k_Mie = beta * (aqi ** alpha) * f_rh 
-    return k_Mie
+    # Tinh do day quang hoc Mie doc dung tau_mie
+    tau_mie = pm2_5 * 1e-6 * mee_m2_g * (scale_height_km * 1000.0) * f_rh
+    return tau_mie
 
 
 def k_extinction(lambda_um: float, pressure_hpa: float,
-                 aqi: float, rh_percent: float) -> float:
+                 pm2_5: float, rh_percent: float) -> float:
     """
-    Tinh tong he so tat k_ext.
+    Tinh tong he so tat k_ext (chinh la do day quang hoc doc dung tuyet doi).
 
     Args:
         lambda_um: Buoc song (micromet)
-        pressure_hpa: Ap suat tu BME280 (hPa)
-        aqi: Chi so bui tu API
-        rh_percent: Do am tu BME280 (%)
+        pressure_hpa: Ap suat (hPa)
+        pm2_5: Nong do bui min PM2.5 tu API
+        rh_percent: Do am tuong doi (%)
 
     Returns:
-        k_ext: Tong he so tat (khong co don vi)
+        k_ext: Tong he so tat / do day quang hoc doc dung
 
     Physics:
         k_ext = k_Rayleigh + k_Mie + k_Ozone
-
-        k_Ozone = 0.016 (hang so, bo qua Phase 1)
-        Source: Leckner (1978)
-
-    Source: Beer-Lambert Law
     """
-    # Goi k_rayleigh(lambda_um, pressure_hpa)
-    # Goi k_mie(aqi, rh_percent)
-
     # k_ext = k_ray + k_mie + K_OZONE
-    k_ext = k_rayleigh(lambda_um, pressure_hpa) + k_mie(aqi, rh_percent) + K_OZONE
+    k_ext = k_rayleigh(lambda_um, pressure_hpa) + k_mie(pm2_5, rh_percent) + K_OZONE
     return k_ext
 
 
@@ -184,7 +172,7 @@ def pwv(rh_percent: float, temp_c: float) -> float:
                (tai su dung logic tu Branch 3)
         T: nhiet do tuyet doi (K)
 
-    Source: Smith (1966), simplified form
+    Source: Leckner (1978), Solar Energy 20:143, simplified form
     Note: PWV feed vao Branch 3 (Magnus-Tetens)
     """
     # Tinh ap suat hoi nuoc bao hoa es(T)

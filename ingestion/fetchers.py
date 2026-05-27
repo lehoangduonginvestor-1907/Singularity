@@ -163,7 +163,7 @@ class Type1Fetcher:
         params_aqi = {
             "latitude": lat,
             "longitude": lon,
-            "hourly": "european_aqi",
+            "hourly": "european_aqi,pm2_5",
             "forecast_days": 2,
             "timezone": "UTC"
         }
@@ -176,12 +176,14 @@ class Type1Fetcher:
         result_12h = []
         for i in range(12):
             aqi_val = data_aqi["hourly"]["european_aqi"][idx_aqi + i]
+            pm25_val = data_aqi["hourly"]["pm2_5"][idx_aqi + i]
             result_12h.append({
                 "temp": data["hourly"]["temperature_2m"][idx + i],
                 "rh": data["hourly"]["relative_humidity_2m"][idx + i],
                 "pressure": data["hourly"]["surface_pressure"][idx + i],
                 "cloud_cover": data["hourly"]["cloud_cover"][idx + i],
-                "aqi": aqi_val if aqi_val is not None else 50
+                "aqi": aqi_val if aqi_val is not None else 50,
+                "pm2_5": pm25_val if pm25_val is not None else 15.0
             })
             
         _set_cache(cache_key, result_12h)

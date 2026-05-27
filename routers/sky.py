@@ -39,26 +39,43 @@ def get_global_sky(
     current_time = atmos_12h[0]["time"]
 
     dummy_zenith = AstroHelper.make_zenith_series()
-    ephem_z = AstroHelper.get_ephemeris(lat, lon, current_time, dummy_zenith)
-    ephem_z["target_alt"] = 90.0
+    
+    peak_score = -1.0
+    best_idx = 0
+    best_payload = None
+    best_ephem = None
+    best_time = None
 
-    payload_z = SingularityOrchestrator.map_and_execute(ephem_z, atmos_12h[0]["profile"], surface_12h[0])
+    # Evaluate the full 12-hour forecast to find the peak observing window
+    for i in range(len(atmos_12h)):
+        t = atmos_12h[i]["time"]
+        ephem_z = AstroHelper.get_ephemeris(lat, lon, t, dummy_zenith)
+        ephem_z["target_alt"] = 90.0
+        payload_z = SingularityOrchestrator.map_and_execute(ephem_z, atmos_12h[i]["profile"], surface_12h[i])
+        score = type_aware_score(payload_z, "Zenith")
+        
+        if score > peak_score:
+            peak_score = score
+            best_idx = i
+            best_payload = payload_z
+            best_ephem = ephem_z
+            best_time = t
 
-    global_score = type_aware_score(payload_z, "Zenith")
-    zenith_trans = float(payload_z["raw_physics"]["transparency"])
-    seeing_arcsec = float(payload_z["raw_physics"]["seeing_arcsec"])
-    sqm = float(payload_z["raw_physics"]["sqm"])
-    dew_danger = bool(payload_z["alerts"]["dew_danger"])
+    zenith_trans = float(best_payload["raw_physics"]["transparency"])
+    seeing_arcsec = float(best_payload["raw_physics"]["seeing_arcsec"])
+    sqm = float(best_payload["raw_physics"]["sqm"])
+    dew_danger = bool(best_payload["alerts"]["dew_danger"])
 
     best_targets = get_tonights_best(
-        lat, lon, current_time, atmos_12h[0]["profile"], surface_12h[0],
-        zenith_trans, ephem_z["moon_phase"]
+        lat, lon, best_time, atmos_12h[best_idx]["profile"], surface_12h[best_idx],
+        zenith_trans, best_ephem["moon_phase"]
     )
 
     response = {
         "time_utc": current_time.isoformat(),
+        "best_time_utc": best_time.isoformat(),
         "zenith_metrics": {
-            "global_score": round(global_score, 1),
+            "global_score": round(peak_score, 1),
             "seeing_arcsec": round(seeing_arcsec, 2),
             "transparency": round(zenith_trans, 2),
             "sqm": round(sqm, 2),

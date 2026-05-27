@@ -29,7 +29,7 @@ def phys_engine(target : dict, api : dict, sensor : dict) -> dict:
     air_warn = air_mass_warning(air_mass)
 
     #scattering:
-    k_ext = k_extinction(0.55, sensor["pressure_hpa"], api["aqi"], sensor["rh_percent"])
+    k_ext = k_extinction(0.55, sensor["pressure_hpa"], api["pm2_5"], sensor["rh_percent"])
     trans = transparency(k_ext, air_mass)
 
     #thermodynamics:
@@ -55,17 +55,48 @@ def phys_engine(target : dict, api : dict, sensor : dict) -> dict:
         
     heights_m = np.array(heights_m)
 
+    # 1. Ground lapse rate calculation using least-squares linear regression over the lower levels.
+    # Boundary Layer Physics: Surface layer (lowest 50-100m, Stull 1988) temperature profile is highly non-linear
+    # and dominated by surface contact. Fitting a line over the lower troposphere (up to ~1.5km/850hPa)
+    # filters out surface-layer microclimate noise and API grid discrepancies.
     if len(valid_levels) > 0:
-        first_valid_i = valid_levels[0]
-        dT = levels["temp_k"][first_valid_i] - (sensor["temp_c"] + 273.15)
-        dh = heights_m[1] - heights_m[0]
-        lapse_rate_ground = dT / dh if dh > 0 else -9.8e-3
+        fit_indices = [0, 1]  # surface and first valid level
+        # If there are more valid levels (like index 2/850hPa) and it is under 2000m, include it for a more robust fit.
+        if len(heights_m) > 2 and heights_m[2] < 2000.0:
+            fit_indices.append(2)
+        
+        # Compile temperatures corresponding to the selected heights
+        temps_k = [sensor["temp_c"] + 273.15]
+        for idx in valid_levels:
+            temps_k.append(levels["temp_k"][idx])
+        temps_k = np.array(temps_k)
+        
+        x = heights_m[fit_indices]
+        y = temps_k[fit_indices]
+        
+        # Linear regression slope = dT / dh
+        lapse_rate_ground, _ = np.polyfit(x, y, 1)
+        
+        # Type 2 Defensive Measure: Heuristic guard limit to prevent numerical runaways in extreme API data
+        lapse_rate_ground = np.clip(lapse_rate_ground, -0.015, 0.015)
     else:
-        lapse_rate_ground = -9.8e-3
+        lapse_rate_ground = -9.8e-3  # Default dry adiabatic lapse rate
 
     cn2_ground = tatarski_cn2(sensor["temp_c"] + 273.15, sensor["pressure_hpa"], lapse_rate_ground)
-    cn2_profile = hv57_profile(heights_m, api["v_300hpa"], cn2_ground)
 
+    # 2. Estimate altitude above sea level (ASL) of the site from surface pressure
+    # US Standard Atmosphere formula: z_asl = 44330 * (1 - (P_surf / 1013.25)^0.1903)
+    asl_site_m = 44330.0 * (1.0 - (sensor["pressure_hpa"] / 1013.25) ** 0.1903)
+    asl_site_m = max(0.0, asl_site_m)
+
+    # 3. Fine-grid integration for Fried parameter to prevent trapezoidal integration error on coarse grids.
+    # We generate a 10m step grid from 0 to max(heights_m) to properly capture exponential ground layer decay.
+    max_h = max(heights_m)
+    heights_fine = np.arange(0.0, max_h + 10.0, 10.0)
+    cn2_profile_fine = hv57_profile(heights_fine, api["v_300hpa"], cn2_ground, asl_site_m=asl_site_m)
+
+    # Calculate wind shear correction factor at the coarse levels and interpolate to fine grid.
+    shear_factors = [1.0]  # factor is 1.0 at h = 0 (surface)
     if "wind_u" in levels and "wind_v" in levels:
         u_vals = [0.0]
         v_vals = [0.0]
@@ -79,10 +110,27 @@ def phys_engine(target : dict, api : dict, sensor : dict) -> dict:
             dh_shear = heights_m[i] - heights_m[i-1]
             if dh_shear > 0:
                 shear = wind_shear(u1, u2, v1, v2, dh_shear)
-                cn2_profile[i] = cn2_with_wind_shear(cn2_profile[i], shear)
+                # wind shear correction formula from tatarski_cn2: factor = 1 + alpha * shear^2
+                # alpha defaults to 0.1 in physics/turbulence.py
+                factor = 1.0 + 0.1 * (shear ** 2)
+                shear_factors.append(factor)
+            else:
+                shear_factors.append(1.0)
+    else:
+        for _ in range(1, len(heights_m)):
+            shear_factors.append(1.0)
+            
+    # Interpolate shear factors to the fine grid and apply
+    shear_factors_fine = np.interp(heights_fine, heights_m, shear_factors)
+    cn2_profile_fine *= shear_factors_fine
 
-    r0_m = fried_parameter(cn2_profile, heights_m)
-    seeing = seeing_arcsec(r0_m)
+    # Compute final r0 and seeing using the fine grid
+    r0_m = fried_parameter(cn2_profile_fine, heights_fine)
+    
+    # Apply zenith angle correction (BUG 3 Fix)
+    target_alt_clipped = np.clip(target["alt_deg"], 0.1, 90.0)
+    sec_gamma = 1.0 / np.sin(np.radians(target_alt_clipped))
+    seeing = seeing_arcsec(r0_m) * (sec_gamma ** 0.6)  # 3/5 = 0.6
 
 
     #lunar_penalty
@@ -120,7 +168,7 @@ if __name__ == "__main__":
         "t_lens_c": 23.0
     }
     api_mock = {
-        "aqi": 80,
+        "pm2_5": 15.0,
         "cloud_cover": 20.0,
         "moon_phase_deg": 90.0,
         "moon_alt_deg": 30.0,

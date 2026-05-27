@@ -13,6 +13,7 @@ sensor_mock = {
 }
 api_mock = {
     "aqi": 10,
+    "pm2_5": 5.0,
     "cloud_cover": 0.0,
     "moon_phase_deg": 0.0,    # Full Moon
     "moon_alt_deg": 90.0,     # Zenith

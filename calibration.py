@@ -121,25 +121,72 @@ def run_calibration(csv_path: str, lat: float = 20.886355, lon: float = 105.7557
         header = next(reader)
         print(f"Header: {header}")
 
+        # Lowercase headers to match easily and dynamically find indices
+        header_lower = [h.strip().lower() for h in header]
+        
+        def find_index(names, default_idx):
+            for name in names:
+                if name.lower() in header_lower:
+                    return header_lower.index(name.lower())
+            return default_idx
+            
+        idx_ts = find_index(['timestamp', 'time'], 0)
+        idx_esp_t = find_index(['esp_t', 'temp', 'temperature'], 1)
+        idx_esp_hum = find_index(['esp_hum', 'humidity', 'hum'], 2)
+        idx_esp_p = find_index(['esp_press', 'esp_pressure', 'pressure', 'press', 'esp_p'], 3)
+        idx_norm_vis = find_index(['esp_normvis', 'esp_norm', 'normvis', 'norm_vis'], 4)
+        idx_cloud = find_index(['nwp_cloud', 'om_cloud', 'cloud_cover', 'cloud'], 10)
+        idx_moon_alt = find_index(['moon_alt', 'moonalt'], 12)
+        idx_moon_phase = find_index(['moon_phase', 'moonphase'], 14)
+        
+        max_idx = max(idx_ts, idx_esp_t, idx_esp_hum, idx_esp_p, idx_norm_vis, idx_cloud, idx_moon_alt, idx_moon_phase)
+        
+        print(f"Mapped Column Indices:")
+        print(f"  Timestamp: {idx_ts} ('{header[idx_ts]}')")
+        print(f"  ESP_T: {idx_esp_t} ('{header[idx_esp_t]}')")
+        print(f"  ESP_Hum: {idx_esp_hum} ('{header[idx_esp_hum]}')")
+        print(f"  ESP_Press: {idx_esp_p} ('{header[idx_esp_p]}')")
+        print(f"  ESP_NormVis: {idx_norm_vis} ('{header[idx_norm_vis]}')")
+        print(f"  Cloud: {idx_cloud} ('{header[idx_cloud]}')")
+        print(f"  Moon_Alt: {idx_moon_alt} ('{header[idx_moon_alt]}')")
+        print(f"  Moon_Phase: {idx_moon_phase} ('{header[idx_moon_phase]}')")
+
         for i, row in enumerate(reader):
-            if len(row) < 15:
+            if len(row) <= max_idx:
                 continue
             try:
-                ts       = datetime.fromisoformat(row[0].strip())
-                esp_t    = float(row[1])
-                esp_hum  = float(row[2])
-                esp_p    = float(row[3])
-                norm_vis = float(row[4])
-                # gain    = row[5]   # không cần cho calibration
-                # t_sky  = float(row[6])
-                # t_am   = float(row[7])
-                # om_temp= float(row[8])
-                # om_hum = float(row[9])
-                om_cloud = float(row[10])
-                # om_wind= float(row[11])
-                moon_alt = float(row[12])
-                # moon_az= float(row[13])
-                moon_phase = float(row[14])
+                # Robust timestamp parsing
+                ts_str = row[idx_ts].strip()
+                ts = None
+                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
+                    try:
+                        ts = datetime.strptime(ts_str, fmt)
+                        break
+                    except ValueError:
+                        continue
+                if ts is None:
+                    try:
+                        ts = datetime.fromisoformat(ts_str)
+                    except ValueError:
+                        continue
+
+                # Check for empty strings in the fields we need
+                if not row[idx_esp_t].strip() or not row[idx_esp_hum].strip() or not row[idx_esp_p].strip() or not row[idx_norm_vis].strip():
+                    continue
+                if not row[idx_cloud].strip() or not row[idx_moon_alt].strip() or not row[idx_moon_phase].strip():
+                    continue
+
+                esp_t    = float(row[idx_esp_t])
+                esp_hum  = float(row[idx_esp_hum])
+                esp_p    = float(row[idx_esp_p])
+                norm_vis = float(row[idx_norm_vis])
+                om_cloud = float(row[idx_cloud])
+                moon_alt = float(row[idx_moon_alt])
+                moon_phase = float(row[idx_moon_phase])
+
+                # Chỉ lấy ban đêm (từ 20:00 đến 04:00 giờ địa phương) để loại bỏ hoàng hôn/bình minh
+                if not (ts.hour >= 20 or ts.hour <= 4):
+                    continue
 
                 # Chỉ lấy ban đêm (Moon_Alt có thể dương) và norm_vis hợp lệ
                 if norm_vis <= 0:
@@ -159,7 +206,7 @@ def run_calibration(csv_path: str, lat: float = 20.886355, lon: float = 105.7557
 
                 # SQM model với c_offset hiện tại (22.0)
                 sqm_mod = sqm_model_ks(
-                    moon_phase_deg = moon_phase * 180,  # CSV lưu phase 0-1 → convert sang 0-180
+                    moon_phase_deg = np.degrees(np.arccos(np.clip(2.0 * moon_phase - 1.0, -1.0, 1.0))),  # Convert fraction [0,1] to K&S phase angle [0,180] deg
                     moon_alt_deg   = moon_alt,
                     target_alt_deg = 90.0,              # Zenith cho calibration
                     pressure_hpa   = esp_p,
