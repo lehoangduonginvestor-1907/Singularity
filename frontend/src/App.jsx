@@ -579,6 +579,75 @@ export default function App() {
   const [redVision, setRedVision] = useState(false);
   const [scanMessage, setScanMessage] = useState('CALCULATING ATMOSPHERIC PHYSICS...');
 
+  const [landingMetrics, setLandingMetrics] = useState({
+    viable_pct: 62,
+    viable_count: 1243,
+    total_sites: 2008,
+    seeing: 1.6,
+    transparency: 74,
+    sqm: 20.4,
+    dew_risk: 18
+  });
+  const [landingSites, setLandingSites] = useState(PRESET_SITES);
+
+  // Fetch real-time global averages and site recommendations on mount
+  useEffect(() => {
+    const fetchLandingData = async () => {
+      try {
+        // Query global-sky for Hanoi initial coordinates
+        const skyRes = await fetch(`${API_URL}/api/global-sky?lat=20.886355&lon=105.755763`);
+        if (skyRes.ok) {
+          const skyData = await skyRes.json();
+          const zm = skyData.zenith_metrics;
+          setLandingMetrics(prev => ({
+            ...prev,
+            seeing: zm.seeing_arcsec || prev.seeing,
+            transparency: zm.transparency ? Math.round(zm.transparency * 100) : prev.transparency,
+            sqm: zm.sqm || prev.sqm,
+            dew_risk: zm.dew_danger ? 85 : 12, // Simulate dew probability in % matching risk
+          }));
+        }
+      } catch (e) {
+        console.warn("Failed to fetch live sky metrics on mount:", e);
+      }
+
+      try {
+        // Query site-ranker for current location
+        const rankRes = await fetch(`${API_URL}/api/site-ranker?user_lat=20.886355&user_lon=105.755763`);
+        if (rankRes.ok) {
+          const rankData = await rankRes.json();
+          
+          if (rankData.top5 && rankData.top5.length > 0) {
+            // Map the top 3 live scored sites from the database
+            const mappedSites = rankData.top5.slice(0, 3).map(site => ({
+              name: site.name,
+              region: site.description?.split('Tỉnh:')[1]?.split('.')[0]?.trim() || site.region || "Việt Nam",
+              lat: site.lat,
+              lon: site.lon,
+              score: site.v_model || site.s_eff,
+              bortle: site.bortle_eff || site.bortle,
+              alt: site.elevation ? `${site.elevation}m` : "1,000m"
+            }));
+            setLandingSites(mappedSites);
+          }
+          
+          if (rankData.meta) {
+            setLandingMetrics(prev => ({
+              ...prev,
+              viable_pct: Math.round((rankData.meta.passed / rankData.meta.total_evaluated) * 100),
+              total_sites: rankData.meta.total_evaluated,
+              viable_count: rankData.meta.passed,
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to fetch live site ranks on mount:", e);
+      }
+    };
+
+    fetchLandingData();
+  }, []);
+
   const tzLabel = formatTzLabel(lon);
 
   const scan = async (scanLat, scanLon, retries = 10) => {
@@ -757,13 +826,13 @@ export default function App() {
                   </div>
 
                   <div className="mt-4 text-5xl font-light text-white leading-none tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                    <span className="text-[#7bf6ff]">62%</span> <span className="italic text-white/70 text-[32px] font-normal ml-1">viable</span>
+                    <span className="text-[#7bf6ff]">{landingMetrics.viable_pct}%</span> <span className="italic text-white/70 text-[32px] font-normal ml-1">viable</span>
                   </div>
                   <p className="text-xs text-white/50 leading-relaxed mt-2.5">
                     {lang === 'en' ? (
-                      "1,243 of 2,008 indexed sites tonight. Moon is waning gibbous, jet stream easing over Southeast Asia."
+                      `${landingMetrics.viable_count.toLocaleString()} of ${landingMetrics.total_sites.toLocaleString()} indexed sites tonight. Moon is waning gibbous, jet stream easing over Southeast Asia.`
                     ) : (
-                      "1,243 trong số 2,008 vị trí quan sát có điều kiện ổn định. Trăng đang khuyết dần, gió đứt luồng cao giảm nhẹ tại ĐNA."
+                      `${landingMetrics.viable_count.toLocaleString()} trong số ${landingMetrics.total_sites.toLocaleString()} vị trí quan sát có điều kiện ổn định. Trăng đang khuyết dần, gió đứt luồng cao giảm nhẹ tại ĐNA.`
                     )}
                   </p>
 
@@ -771,10 +840,10 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                     {[
-                      { l: lang === 'en' ? "MEDIAN SEEING" : "SEEING TRUNG BÌNH", v: "1.6", unit: "″",  s: [3.4,3.0,2.6,2.2,1.9,1.6,1.5,1.6], color: "#00f0ff" },
-                      { l: lang === 'en' ? "TRANSPARENCY" : "ĐỘ TRONG SUỐT",  v: "74", unit: "%",   s: [42,55,62,68,74,78,76,74],         color: "#a855f7" },
-                      { l: lang === 'en' ? "MEDIAN SQM" : "BẦU TRỜI (SQM)",    v: "20.4", unit: "",  s: [18.2,18.8,19.4,20.0,20.4,20.5,20.3,20.4], color: "#c4a0fb" },
-                      { l: lang === 'en' ? "DEW RISK" : "NGUY CƠ ĐỌNG SƯƠNG",      v: "18", unit: "%",   s: [28,24,20,18,17,18,19,18],         color: "#5cf2bd" },
+                      { l: lang === 'en' ? "MEDIAN SEEING" : "SEEING TRUNG BÌNH", v: landingMetrics.seeing.toFixed(1), unit: "″",  s: [3.4,3.0,2.6,2.2,1.9,1.6,1.5,landingMetrics.seeing], color: "#00f0ff" },
+                      { l: lang === 'en' ? "TRANSPARENCY" : "ĐỘ TRONG SUỐT",  v: landingMetrics.transparency.toFixed(0), unit: "%",   s: [42,55,62,68,74,78,76,landingMetrics.transparency],         color: "#a855f7" },
+                      { l: lang === 'en' ? "MEDIAN SQM" : "BẦU TRỜI (SQM)",    v: landingMetrics.sqm.toFixed(1), unit: "",  s: [18.2,18.8,19.4,20.0,20.4,20.5,20.3,landingMetrics.sqm], color: "#c4a0fb" },
+                      { l: lang === 'en' ? "DEW RISK" : "NGUY CƠ ĐỌNG SƯƠNG",      v: landingMetrics.dew_risk.toFixed(0), unit: "%",   s: [28,24,20,18,17,18,19,landingMetrics.dew_risk],         color: "#5cf2bd" },
                     ].map(m => (
                       <div key={m.l}>
                         <div className="t-eyebrow text-[9.5px] text-white/40">{m.l}</div>
@@ -821,7 +890,7 @@ export default function App() {
               {/* Grid presets */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
                 {/* Sa Pa, Tam Dao, Moc Chau */}
-                {PRESET_SITES.slice(0, 3).map((s, i) => (
+                {landingSites.slice(0, 3).map((s, i) => (
                   <div 
                     key={s.name} 
                     onClick={() => handleLocationSelect({ lat: s.lat, lon: s.lon, name: s.name })}
