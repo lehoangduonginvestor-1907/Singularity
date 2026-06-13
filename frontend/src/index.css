@@ -304,6 +304,27 @@ body {
 }
 .flicker { animation: flicker 4s ease-in-out infinite; }
 
+/* Loading skeleton shimmer */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  vertical-align: middle;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.red-vision .skeleton { background: rgba(255,0,40,0.08); }
+.red-vision .skeleton::after { background: linear-gradient(90deg, transparent, rgba(255,40,60,0.18), transparent); }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
 /* Scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }

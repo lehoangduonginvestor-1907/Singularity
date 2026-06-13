@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -11,7 +11,7 @@ import VisibilityWindow from './VisibilityWindow';
 import GearPanel from './GearPanel';
 import SitePlanner from './SitePlanner';
 import TargetLocator from './TargetLocator';
-import { DICT, formatLocalTime, formatTzLabel } from './utils';
+import { DICT, formatLocalTime, formatTzLabel, formatUtcStamp, getTzOffset } from './utils';
 import { API_URL } from './api';
 
 const PRESET_SITES = [
@@ -128,6 +128,11 @@ const NebulaBg = () => (
       </g>
     ))}
   </svg>
+);
+
+/* ─── LOADING SKELETON ───────────────────────────────────────────────── */
+const Skeleton = ({ w = "100%", h = 12, className = '' }) => (
+  <span className={`skeleton ${className}`} style={{ width: w, height: h }} />
 );
 
 /* ─── CARD LAYOUT COMPONENT ──────────────────────────────────────────── */
@@ -272,28 +277,81 @@ const MetricTile = ({ label, icon: IconComponent, value, unit, sub, tone = "cyan
 };
 
 /* ─── TARGET SPOTLIGHT ───────────────────────────────────────────────── */
-const TargetSpotlight = ({ targetName, catalogNames = [], onTargetChange, forecast, lang }) => {
+const TargetSpotlight = ({ targetName, catalogNames = [], onTargetChange, lat, lon, lang }) => {
   const isEn = lang === 'en';
-  
-  // Custom estimated transit curves
+  const [vis, setVis] = useState(null);
+  const [visLoading, setVisLoading] = useState(false);
+
+  // Real altitude track for the selected target (today), from the ephemeris API.
+  useEffect(() => {
+    if (!targetName) return;
+    let cancelled = false;
+    setVisLoading(true);
+    setVis(null);
+    fetch(`${API_URL}/api/visibility-window?lat=${lat}&lon=${lon}&target_name=${encodeURIComponent(targetName)}&days=1`)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then(d => { if (!cancelled) setVis(d?.days?.[0] || null); })
+      .catch(e => { if (!cancelled) console.warn('Visibility fetch failed:', e.message); })
+      .finally(() => { if (!cancelled) setVisLoading(false); });
+    return () => { cancelled = true; };
+  }, [targetName, lat, lon]);
+
+  // Derive the SVG curve + rise/transit/set in local time from real altitudes.
+  const arc = useMemo(() => {
+    const ha = vis?.hourly_altitude;
+    if (!ha || ha.length < 2) return null;
+    const offset = getTzOffset(lon);
+    const toLocal = (h) => {
+      if (h == null || isNaN(h)) return '--:--';
+      let lh = (h + offset) % 24; if (lh < 0) lh += 24;
+      let hh = Math.floor(lh), mm = Math.round((lh - hh) * 60);
+      if (mm === 60) { mm = 0; hh = (hh + 1) % 24; }
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    };
+    let riseH = null, setH = null;
+    for (let i = 0; i < ha.length - 1; i++) {
+      const a1 = ha[i].alt, a2 = ha[i + 1].alt;
+      if (a1 <= 0 && a2 > 0) riseH = ha[i].hour + (-a1) / (a2 - a1);
+      if (a1 > 0 && a2 <= 0) setH = ha[i].hour + a1 / (a1 - a2);
+    }
+    const W = 320, baseY = 95, topY = 12;
+    const xOf = (hour) => 10 + (hour / 23) * 300;
+    const yOf = (alt) => baseY - Math.max(0, Math.min(90, alt)) / 90 * (baseY - topY);
+    const linePath = ha.map((p, i) => `${i ? 'L' : 'M'} ${xOf(p.hour).toFixed(1)} ${yOf(p.alt).toFixed(1)}`).join(' ');
+    const peakUp = vis.transit_alt > 0;
+    return {
+      linePath,
+      transitX: xOf(vis.transit_hour),
+      transitY: yOf(vis.transit_alt),
+      transitAlt: Math.round(vis.transit_alt),
+      peakUp,
+      riseLocal: toLocal(riseH),
+      transitLocal: toLocal(vis.transit_hour),
+      setLocal: toLocal(setH),
+      everUp: ha.some(p => p.alt > 0),
+    };
+  }, [vis, lon]);
+
+  const visible = arc?.everUp;
+
   return (
     <Card accent="violet" padding={24}>
       <div className="flex justify-between items-center mb-3.5">
         <span className="t-eyebrow">{isEn ? "PRIME TARGET" : "MỤC TIÊU ƯU TIÊN"}</span>
-        <span className="chip violet flex items-center gap-1">
-          <span className="dot pulse bg-[#c4a0fb]"/>
-          {isEn ? "VISIBLE" : "RÕ RÀNG"}
+        <span className={`chip ${visible ? 'violet' : ''} flex items-center gap-1`}>
+          <span className={`dot ${visible ? 'pulse bg-[#c4a0fb]' : 'bg-white/40'}`}/>
+          {visible ? (isEn ? "VISIBLE" : "TRÊN ĐỈNH TRỜI") : (isEn ? "BELOW HORIZON" : "DƯỚI CHÂN TRỜI")}
         </span>
       </div>
-      
+
       <div className="flex justify-between items-start gap-4">
         <div className="text-5xl font-light text-white tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
           {targetName.split(' ')[0]} <span className="italic text-white/55 text-2xl font-normal ml-1">
-            {targetName.substring(targetName.indexOf(' ') + 1) || 'Galaxy'}
+            {targetName.substring(targetName.indexOf(' ') + 1) || ''}
           </span>
         </div>
-        <select 
-          value={targetName} 
+        <select
+          value={targetName}
           onChange={e => onTargetChange(e.target.value)}
           className="bg-white/4 border border-white/8 rounded-lg px-3 py-1.5 text-white text-xs font-semibold outline-none cursor-pointer hover:bg-white/8 transition-colors max-w-[150px]"
         >
@@ -301,44 +359,55 @@ const TargetSpotlight = ({ targetName, catalogNames = [], onTargetChange, foreca
         </select>
       </div>
       <div className="text-xs text-white/55 mt-1.5 font-medium">
-        {targetName.includes('M51') ? 'Sb spiral galaxy · Canes Venatici · mag 8.4' : 'Deep sky catalog object · Astro target'}
+        {arc
+          ? (isEn ? `Peak altitude ${arc.transitAlt}° tonight` : `Đạt đỉnh ${arc.transitAlt}° đêm nay`)
+          : (isEn ? 'Computing altitude track…' : 'Đang tính quỹ đạo độ cao…')}
       </div>
 
-      {/* Transit arc */}
+      {/* Real altitude track over the night */}
       <div className="relative h-[115px] my-4">
         <svg width="100%" height="115" viewBox="0 0 320 115">
           <defs>
-            <linearGradient id="arc-g" x1="0" x2="1">
-              <stop offset="0%"  stopColor="rgba(168,85,247,0)"/>
-              <stop offset="50%" stopColor="#a855f7"/>
+            <linearGradient id="arc-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(168,85,247,0.35)"/>
               <stop offset="100%" stopColor="rgba(168,85,247,0)"/>
             </linearGradient>
           </defs>
-          <line x1="10" y1="95" x2="310" y2="95" stroke="rgba(255,255,255,0.08)"/>
-          <text x="10" y="108" fontSize="9" fill="rgba(255,255,255,0.35)" fontFamily="Roboto Mono">SE · 20:42</text>
-          <text x="155" y="108" fontSize="9" fill="rgba(255,255,255,0.35)" fontFamily="Roboto Mono" textAnchor="middle">S · 00:30</text>
-          <text x="310" y="108" fontSize="9" fill="rgba(255,255,255,0.35)" fontFamily="Roboto Mono" textAnchor="end">SW · 04:18</text>
-          <path d="M 10 95 Q 160 -25 310 95" stroke="url(#arc-g)" strokeWidth="1.2" fill="none" strokeDasharray="3 4"/>
-          <path d="M 10 95 Q 160 -25 160 35" stroke="#a855f7" strokeWidth="2" fill="none"
-            style={{ filter: "drop-shadow(0 0 5px rgba(168,85,247,0.5))" }}/>
-          <circle cx="160" cy="35" r="4.5" fill="#a855f7"/>
-          <circle cx="160" cy="35" r="9" fill="none" stroke="#a855f7" opacity="0.3"/>
-          <text x="160" y="24" textAnchor="middle" fontSize="9" fill="#c4a0fb" fontFamily="Roboto Mono" fontWeight="bold">ALT 72°</text>
+          <line x1="10" y1="95" x2="310" y2="95" stroke="rgba(255,255,255,0.12)"/>
+          <text x="10" y="108" fontSize="8" fill="rgba(255,255,255,0.3)" fontFamily="Roboto Mono">{isEn ? 'HORIZON' : 'CHÂN TRỜI'}</text>
+          {arc ? (
+            <>
+              <path d={`${arc.linePath} L 310 95 L 10 95 Z`} fill="url(#arc-fill)" opacity="0.6"/>
+              <path d={arc.linePath} stroke="#a855f7" strokeWidth="2" fill="none"
+                style={{ filter: "drop-shadow(0 0 5px rgba(168,85,247,0.5))" }}/>
+              {arc.peakUp && (
+                <>
+                  <circle cx={arc.transitX} cy={arc.transitY} r="4.5" fill="#a855f7"/>
+                  <circle cx={arc.transitX} cy={arc.transitY} r="9" fill="none" stroke="#a855f7" opacity="0.3"/>
+                  <text x={arc.transitX} y={arc.transitY - 11} textAnchor="middle" fontSize="9" fill="#c4a0fb" fontFamily="Roboto Mono" fontWeight="bold">ALT {arc.transitAlt}°</text>
+                </>
+              )}
+            </>
+          ) : (
+            <text x="160" y="55" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.3)" fontFamily="Roboto Mono">
+              {visLoading ? (isEn ? 'loading…' : 'đang tải…') : '--'}
+            </text>
+          )}
         </svg>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <div className="p-2 rounded-xl bg-white/2 border border-white/5 text-center">
           <div className="t-eyebrow text-[9px]">{isEn ? "RISE" : "MỌC"}</div>
-          <div className="t-mono text-sm text-white font-semibold mt-1">20:42</div>
+          <div className="t-mono text-sm text-white font-semibold mt-1">{arc ? arc.riseLocal : '--:--'}</div>
         </div>
         <div className="p-2 rounded-xl bg-purple-500/8 border border-purple-500/20 text-center">
           <div className="t-eyebrow text-[9px] text-purple-300">{isEn ? "TRANSIT" : "CỰC CẬN"}</div>
-          <div className="t-mono text-sm text-white font-semibold mt-1">00:30</div>
+          <div className="t-mono text-sm text-white font-semibold mt-1">{arc ? arc.transitLocal : '--:--'}</div>
         </div>
         <div className="p-2 rounded-xl bg-white/2 border border-white/5 text-center">
           <div className="t-eyebrow text-[9px]">{isEn ? "SET" : "LẶN"}</div>
-          <div className="t-mono text-sm text-white font-semibold mt-1">04:18</div>
+          <div className="t-mono text-sm text-white font-semibold mt-1">{arc ? arc.setLocal : '--:--'}</div>
         </div>
       </div>
     </Card>
@@ -586,47 +655,73 @@ export default function App() {
   const [scanMessage, setScanMessage] = useState('CALCULATING ATMOSPHERIC PHYSICS...');
 
   const [landingMetrics, setLandingMetrics] = useState({
-    viable_pct: 62,
-    viable_count: 1243,
-    total_sites: 2008,
-    seeing: 1.6,
-    transparency: 74,
-    sqm: 20.4,
-    dew_risk: 18
+    viable_pct: null,
+    viable_count: null,
+    total_sites: null,
+    seeing: null,
+    transparency: null,
+    sqm: null,
+    dew_risk: null
   });
   const [landingSites, setLandingSites] = useState(PRESET_SITES);
+  const [liveStatus, setLiveStatus] = useState('syncing'); // 'syncing' | 'live' | 'offline'
+  const [now, setNow] = useState(() => new Date());
 
-  // Fetch real-time global averages and site recommendations on mount
+  // Live UTC clock. Display is minute-precision, so a 30s tick is plenty and
+  // avoids re-rendering the whole tree every second.
   useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Fetch real-time global averages + site recommendations, with backend wake-up
+  // retries (Render free tier sleeps) and a 5-minute auto-refresh.
+  useEffect(() => {
+    let cancelled = false;
+
     const fetchLandingData = async () => {
-      try {
-        // Query global-sky for Hanoi initial coordinates
-        const skyRes = await fetch(`${API_URL}/api/global-sky?lat=20.886355&lon=105.755763`);
-        if (skyRes.ok) {
+      // Keep showing the last good numbers while a refresh runs.
+      setLiveStatus(prev => (prev === 'live' ? 'live' : 'syncing'));
+
+      // Cheap health ping to wake a sleeping instance before the heavy call.
+      try { await fetch(`${API_URL}/api/health`); } catch { /* ignore */ }
+
+      const MAX_RETRIES = 12;
+      let gotSky = false;
+      for (let attempt = 0; attempt <= MAX_RETRIES && !cancelled; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 4000));
+        try {
+          const skyRes = await fetch(`${API_URL}/api/global-sky?lat=20.886355&lon=105.755763`);
+          if (!skyRes.ok) throw new Error(`HTTP ${skyRes.status}`);
           const skyData = await skyRes.json();
+          if (cancelled) return;
           setGlobalData(skyData);
           const zm = skyData.zenith_metrics;
           setLandingMetrics(prev => ({
             ...prev,
-            seeing: zm.seeing_arcsec || prev.seeing,
-            transparency: zm.transparency ? Math.round(zm.transparency * 100) : prev.transparency,
-            sqm: zm.sqm || prev.sqm,
-            dew_risk: zm.dew_danger ? 85 : 12, // Simulate dew probability in % matching risk
+            seeing: zm.seeing_arcsec ?? prev.seeing,
+            transparency: zm.transparency != null ? Math.round(zm.transparency * 100) : prev.transparency,
+            sqm: zm.sqm ?? prev.sqm,
+            dew_risk: zm.dew_danger ? 85 : 12,
           }));
+          setLiveStatus('live');
+          gotSky = true;
+          break;
+        } catch (e) {
+          if (!cancelled) console.warn(`Live sky fetch attempt ${attempt + 1} failed:`, e.message);
         }
-      } catch (e) {
-        console.warn("Failed to fetch live sky metrics on mount:", e);
       }
 
+      if (cancelled) return;
+      if (!gotSky) { setLiveStatus('offline'); return; }
+
+      // Site ranking is best-effort; "live" status already granted by sky data.
       try {
-        // Query site-ranker for current location
         const rankRes = await fetch(`${API_URL}/api/site-ranker?user_lat=20.886355&user_lon=105.755763`);
-        if (rankRes.ok) {
+        if (rankRes.ok && !cancelled) {
           const rankData = await rankRes.json();
-          
           if (rankData.top5 && rankData.top5.length > 0) {
-            // Map the top 3 live scored sites from the database
-            const mappedSites = rankData.top5.slice(0, 3).map(site => ({
+            setLandingSites(rankData.top5.slice(0, 3).map(site => ({
               name: site.name,
               region: site.description?.split('Tỉnh:')[1]?.split('.')[0]?.trim() || site.region || "Việt Nam",
               lat: site.lat,
@@ -634,10 +729,8 @@ export default function App() {
               score: site.v_model || site.s_eff,
               bortle: site.bortle_eff || site.bortle,
               alt: site.elevation ? `${site.elevation}m` : "1,000m"
-            }));
-            setLandingSites(mappedSites);
+            })));
           }
-          
           if (rankData.meta) {
             setLandingMetrics(prev => ({
               ...prev,
@@ -648,11 +741,13 @@ export default function App() {
           }
         }
       } catch (e) {
-        console.warn("Failed to fetch live site ranks on mount:", e);
+        if (!cancelled) console.warn("Live site ranks fetch failed:", e.message);
       }
     };
 
     fetchLandingData();
+    const id = setInterval(fetchLandingData, 5 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   const tzLabel = formatTzLabel(lon);
@@ -828,18 +923,37 @@ export default function App() {
                   style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}
                 >
                   <div className="flex justify-between items-center text-[10.5px] t-mono text-white/45">
-                    <span>{lang === 'en' ? 'TONIGHT · GLOBAL OUTLOOK' : 'ĐÊM NAY · DỰ BÁO CHUNG'}</span>
-                    <span>27 MAY · 02:14 UTC</span>
+                    <span className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        liveStatus === 'live' ? 'bg-[#5cf2bd]' : liveStatus === 'offline' ? 'bg-[#ff6b6b]' : 'bg-[#ffb454]'
+                      } ${liveStatus !== 'offline' ? 'animate-pulse' : ''}`} />
+                      {liveStatus === 'live'
+                        ? (lang === 'en' ? 'LIVE · GLOBAL OUTLOOK' : 'TRỰC TIẾP · DỰ BÁO CHUNG')
+                        : liveStatus === 'offline'
+                          ? (lang === 'en' ? 'ENGINE OFFLINE · RETRYING' : 'MẤT KẾT NỐI · ĐANG THỬ LẠI')
+                          : (lang === 'en' ? 'SYNCING · WAKING ENGINE' : 'ĐANG KẾT NỐI MÁY CHỦ')}
+                    </span>
+                    <span>{formatUtcStamp(now)}</span>
                   </div>
 
                   <div className="mt-4 text-5xl font-light text-white leading-none tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                    <span className="text-[#7bf6ff]">{landingMetrics.viable_pct}%</span> <span className="italic text-white/70 text-[32px] font-normal ml-1">viable</span>
+                    {landingMetrics.viable_pct != null ? (
+                      <><span className="text-[#7bf6ff]">{landingMetrics.viable_pct}%</span> <span className="italic text-white/70 text-[32px] font-normal ml-1">{lang === 'en' ? 'viable' : 'đạt'}</span></>
+                    ) : (
+                      <Skeleton w={190} h={42} />
+                    )}
                   </div>
                   <p className="text-xs text-white/50 leading-relaxed mt-2.5">
-                    {lang === 'en' ? (
-                      `${landingMetrics.viable_count.toLocaleString()} of ${landingMetrics.total_sites.toLocaleString()} indexed sites tonight. Moon is waning gibbous, jet stream easing over Southeast Asia.`
+                    {globalData?.moon_metrics ? (
+                      lang === 'en' ? (
+                        `${landingMetrics.viable_count != null ? `${landingMetrics.viable_count.toLocaleString()} of ${landingMetrics.total_sites.toLocaleString()} indexed sites viable tonight. ` : ''}Moon is ${globalData.moon_metrics.phase_label_en.toLowerCase()} at ${globalData.moon_metrics.illumination}% illumination.`
+                      ) : (
+                        `${landingMetrics.viable_count != null ? `${landingMetrics.viable_count.toLocaleString()} trên ${landingMetrics.total_sites.toLocaleString()} vị trí đạt điều kiện đêm nay. ` : ''}Mặt Trăng ${globalData.moon_metrics.phase_label_vi.toLowerCase()}, độ sáng ${globalData.moon_metrics.illumination}%.`
+                      )
+                    ) : liveStatus === 'offline' ? (
+                      lang === 'en' ? 'Live engine unreachable — retrying automatically.' : 'Không kết nối được máy chủ — đang tự động thử lại.'
                     ) : (
-                      `${landingMetrics.viable_count.toLocaleString()} trong số ${landingMetrics.total_sites.toLocaleString()} vị trí quan sát có điều kiện ổn định. Trăng đang khuyết dần, gió đứt luồng cao giảm nhẹ tại ĐNA.`
+                      <span className="block space-y-1.5"><Skeleton w="100%" h={9} /><Skeleton w="65%" h={9} /></span>
                     )}
                   </p>
 
@@ -847,19 +961,25 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                     {[
-                       { l: lang === 'en' ? "MEDIAN SEEING" : "SEEING TRUNG BÌNH", v: landingMetrics.seeing.toFixed(1), unit: "″",  s: [3.4,3.0,2.6,2.2,1.9,1.6,1.5,landingMetrics.seeing], color: "var(--cyan)" },
-                       { l: lang === 'en' ? "TRANSPARENCY" : "ĐỘ TRONG SUỐT",  v: landingMetrics.transparency.toFixed(0), unit: "%",   s: [42,55,62,68,74,78,76,landingMetrics.transparency],         color: "var(--violet)" },
-                       { l: lang === 'en' ? "MEDIAN SQM" : "BẦU TRỜI (SQM)",    v: landingMetrics.sqm.toFixed(1), unit: "",  s: [18.2,18.8,19.4,20.0,20.4,20.5,20.3,landingMetrics.sqm], color: "var(--violet)" },
-                       { l: lang === 'en' ? "DEW RISK" : "NGUY CƠ ĐỌNG SƯƠNG",      v: landingMetrics.dew_risk.toFixed(0), unit: "%",   s: [28,24,20,18,17,18,19,landingMetrics.dew_risk],         color: "var(--green)" },
+                       { l: lang === 'en' ? "MEDIAN SEEING" : "SEEING TRUNG BÌNH", raw: landingMetrics.seeing, v: landingMetrics.seeing?.toFixed(1), unit: "″",  s: [3.4,3.0,2.6,2.2,1.9,1.6,1.5,landingMetrics.seeing], color: "var(--cyan)" },
+                       { l: lang === 'en' ? "TRANSPARENCY" : "ĐỘ TRONG SUỐT",  raw: landingMetrics.transparency, v: landingMetrics.transparency?.toFixed(0), unit: "%",   s: [42,55,62,68,74,78,76,landingMetrics.transparency],         color: "var(--violet)" },
+                       { l: lang === 'en' ? "MEDIAN SQM" : "BẦU TRỜI (SQM)",    raw: landingMetrics.sqm, v: landingMetrics.sqm?.toFixed(1), unit: "",  s: [18.2,18.8,19.4,20.0,20.4,20.5,20.3,landingMetrics.sqm], color: "var(--violet)" },
+                       { l: lang === 'en' ? "DEW RISK" : "NGUY CƠ ĐỌNG SƯƠNG",      raw: landingMetrics.dew_risk, v: landingMetrics.dew_risk?.toFixed(0), unit: "%",   s: [28,24,20,18,17,18,19,landingMetrics.dew_risk],         color: "var(--green)" },
                     ].map(m => (
                       <div key={m.l}>
                         <div className="t-eyebrow text-[9.5px] text-white/40">{m.l}</div>
                         <div className="flex items-baseline gap-1 mt-1.5">
-                          <span className="text-3xl font-light text-white leading-none" style={{ fontFamily: "var(--font-display)" }}>{m.v}</span>
-                          <span className="t-mono text-xs text-white/40">{m.unit}</span>
+                          {m.raw != null ? (
+                            <>
+                              <span className="text-3xl font-light text-white leading-none" style={{ fontFamily: "var(--font-display)" }}>{m.v}</span>
+                              <span className="t-mono text-xs text-white/40">{m.unit}</span>
+                            </>
+                          ) : (
+                            <Skeleton w={68} h={28} />
+                          )}
                         </div>
                         <div className="mt-2.5">
-                          <ThinSparkline points={m.s} color={m.color} height={16}/>
+                          {m.raw != null ? <ThinSparkline points={m.s} color={m.color} height={16}/> : <Skeleton w="100%" h={16} />}
                         </div>
                       </div>
                     ))}
@@ -868,7 +988,7 @@ export default function App() {
                   <div className="h-[1px] bg-white/8 mt-6 mb-4" />
                   <div className="flex justify-between text-[10.5px] t-mono text-white/30">
                     <span>5 sources · 12 models</span>
-                    <span>next poll · 02:19</span>
+                    <span>{lang === 'en' ? 'auto-sync · 5 min' : 'tự đồng bộ · 5 phút'}</span>
                   </div>
                 </div>
               </div>
@@ -890,7 +1010,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="flex gap-3 items-center text-xs">
-                  <span className="t-mono text-white/40">5 of 78 indexed</span>
+                  <span className="t-mono text-white/40">{landingSites.length} {lang === 'en' ? 'curated sites' : 'vị trí tuyển chọn'}</span>
                 </div>
               </div>
 
@@ -908,7 +1028,7 @@ export default function App() {
                       style={{ background: `radial-gradient(240px 140px at 100% 0%, ${s.score >= 7 ? "rgba(0,240,255,0.08)" : "rgba(168,85,247,0.08)"}, transparent 60%)` }}
                     />
                     <div className="flex justify-between items-center">
-                      <span className="t-mono text-[9px] text-white/40">SITE · 0{i+1}</span>
+                      <span className="t-mono text-[9px] text-white/40">{lang === 'en' ? 'SITE' : 'VỊ TRÍ'} · 0{i+1}</span>
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5, 6, 7].map(n => (
                           <div 
@@ -927,7 +1047,7 @@ export default function App() {
                     <div className="h-[1px] bg-white/6 my-3.5" />
                     <div className="flex justify-between items-baseline">
                       <div>
-                        <div className="t-mono text-[9px] text-white/30">SCORE</div>
+                        <div className="t-mono text-[9px] text-white/30">{lang === 'en' ? 'SCORE' : 'ĐIỂM'}</div>
                         <div className="text-3xl font-light leading-none mt-1" style={{ fontFamily: "var(--font-display)", color: s.score >= 7 ? '#7bf6ff' : '#c4a0fb' }}>
                           {s.score.toFixed(1)}
                         </div>
@@ -954,7 +1074,7 @@ export default function App() {
                       <div className="text-3xl font-light text-white leading-none" style={{ fontFamily: "var(--font-display)" }}>
                         {globalData?.moon_metrics ? globalData.moon_metrics.illumination : 86}<span className="text-base text-white/50">%</span>
                       </div>
-                      <div className="text-[10px] text-white/40 mt-1">illumination</div>
+                      <div className="text-[10px] text-white/40 mt-1">{lang === 'en' ? 'illumination' : 'độ sáng'}</div>
                     </div>
                   </div>
                   <div className="h-[1px] bg-white/6 my-3.5" />
@@ -1000,7 +1120,7 @@ export default function App() {
                     </span>
                   </div>
                   <div className="text-[11px] text-white/45 mt-1 leading-normal">
-                    {globalData?.featured_target ? globalData.featured_target.region : 'Canes Venatici'} · transits at{" "}
+                    {globalData?.featured_target ? globalData.featured_target.region : 'Canes Venatici'} · {lang === 'en' ? 'transits at' : 'lên đỉnh lúc'}{" "}
                     <span className="text-purple-300/80 font-mono font-semibold">
                       {globalData?.featured_target ? globalData.featured_target.transit_local : '00:30'}
                     </span>
@@ -1020,7 +1140,7 @@ export default function App() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[8px] block text-[#c4a0fb] opacity-80">SCORE</span>
+                      <span className="text-[8px] block text-[#c4a0fb] opacity-80">{lang === 'en' ? 'SCORE' : 'ĐIỂM'}</span>
                       <span className="text-[#c4a0fb] font-semibold mt-1 block">
                         {globalData?.featured_target ? globalData.featured_target.score.toFixed(1) : '7.8'}
                       </span>
@@ -1183,9 +1303,9 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <span className="chip orange flex items-center gap-1"><Moon size={11} />MOON 86%</span>
-                    <span className="chip cyan flex items-center gap-1"><Wind size={11} />JET EASING</span>
-                    <span className="chip violet flex items-center gap-1"><Info size={11} />12/12 MODELS AGREE</span>
+                    <span className="chip orange flex items-center gap-1"><Moon size={11} />MOON {globalData?.moon_metrics ? `${globalData.moon_metrics.illumination}%` : '--'}</span>
+                    <span className="chip cyan flex items-center gap-1"><Wind size={11} />{globalData?.ensemble ? 'ENSEMBLE NWP' : 'GFS MODEL'}</span>
+                    <span className="chip violet flex items-center gap-1"><Info size={11} />{formatUtcStamp(now)}</span>
                   </div>
                 </div>
 
@@ -1230,26 +1350,34 @@ export default function App() {
                     <MetricTile
                       label={t.zenith_seeing} icon={Eye} tone="cyan"
                       value={zm.seeing_arcsec?.toFixed(2)} unit="″ FWHM"
-                      sub={lang === 'en' ? `↓ 0.4″ vs 24h avg · excellent seeing` : `↓ 0.4″ so với TB 24h · nét tuyệt vời`}
-                      spark={[3.4, 3.0, 2.8, 2.3, 2.0, 1.7, 1.5, zm.seeing_arcsec]}
+                      sub={(() => {
+                        const s = zm.seeing_arcsec;
+                        const q = s == null ? '' : s <= 1.0 ? (lang === 'en' ? 'excellent seeing' : 'nét tuyệt vời')
+                          : s <= 1.5 ? (lang === 'en' ? 'good seeing' : 'nét tốt')
+                          : s <= 2.5 ? (lang === 'en' ? 'moderate seeing' : 'nét trung bình')
+                          : (lang === 'en' ? 'poor seeing' : 'nét kém');
+                        return q;
+                      })()}
                     />
                     <MetricTile
                       label={t.transparency} icon={Sparkles} tone="violet"
                       value={(zm.transparency * 100).toFixed(0)} unit="%"
-                      sub={lang === 'en' ? `aerosol τ 0.12 · clean atmosphere` : `mật độ bụi mịn thấp · khí quyển sạch`}
-                      spark={[42, 55, 62, 68, 74, 82, 86, zm.transparency * 100]}
+                      sub={(() => {
+                        const tr = zm.transparency;
+                        return tr == null ? '' : tr >= 0.8 ? (lang === 'en' ? 'clean atmosphere' : 'khí quyển trong')
+                          : tr >= 0.6 ? (lang === 'en' ? 'some haze' : 'có sương mù nhẹ')
+                          : (lang === 'en' ? 'hazy atmosphere' : 'khí quyển mờ đục');
+                      })()}
                     />
                     <MetricTile
                       label={t.sqm_darkness} icon={Moon} tone="cyan"
                       value={zm.sqm?.toFixed(2) || '21.00'} unit="mag/arcsec²"
-                      sub={`Bortle ${zm.sqm > 21.7 ? 1 : zm.sqm > 21.5 ? 2 : zm.sqm > 21.3 ? 3 : zm.sqm > 20.8 ? 4 : 5} · Dark sky spot`}
-                      spark={[18.2, 18.6, 19.1, 19.6, 20.2, 20.5, 20.7, zm.sqm]}
+                      sub={`Bortle ${zm.sqm > 21.7 ? 1 : zm.sqm > 21.5 ? 2 : zm.sqm > 21.3 ? 3 : zm.sqm > 20.8 ? 4 : 5} · ${lang === 'en' ? 'dark sky spot' : 'điểm trời tối'}`}
                     />
                     <MetricTile
                       label={t.dew_risk} icon={Droplet} tone={zm.dew_danger ? "orange" : "green"}
                       value={zm.dew_danger ? t.danger : t.safe}
                       sub={zm.dew_danger ? t.cond_risk : t.lens_protected}
-                      spark={[8, 10, 9, 12, 14, 13, zm.dew_danger ? 18 : 12]}
                     />
                   </div>
 
@@ -1308,11 +1436,12 @@ export default function App() {
 
                   {/* Target Spotlight */}
                   <div className="lg:col-span-4 h-full">
-                    <TargetSpotlight 
-                      targetName={targetName} 
-                      catalogNames={globalData.catalog_names} 
-                      onTargetChange={setTargetName} 
-                      forecast={forecast}
+                    <TargetSpotlight
+                      targetName={targetName}
+                      catalogNames={globalData.catalog_names}
+                      onTargetChange={setTargetName}
+                      lat={lat}
+                      lon={lon}
                       lang={lang}
                     />
                   </div>
@@ -1347,14 +1476,14 @@ export default function App() {
                 {/* Dashboard Footer info */}
                 <div className="flex flex-col sm:flex-row justify-between items-center mt-8 pt-4.5 border-t border-white/6 text-[10.5px] t-mono text-white/30 gap-3">
                   <div className="flex gap-4">
-                    <span>ECMWF · 02:14</span>
-                    <span>GFS · 02:08</span>
-                    <span>7TIMER · 02:00</span>
-                    <span>METAR · 02:13</span>
-                    <span>ESP32 · 02:11</span>
+                    <span>ECMWF</span>
+                    <span>GFS</span>
+                    <span>7TIMER</span>
+                    <span>METAR</span>
+                    <span>ESP32</span>
                   </div>
                   <span>
-                    Singularity v1.0.0 · physics engine v3.1 · last poll {tzLabel}
+                    Singularity v1.0.0 · physics engine v3.1 · {formatUtcStamp(now)}
                   </span>
                 </div>
 

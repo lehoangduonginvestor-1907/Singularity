@@ -5,6 +5,18 @@ export const formatTzLabel = (lon) => {
   return offset >= 0 ? `UTC+${offset}` : `UTC${offset}`;
 };
 
+const UTC_MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+export const formatUtcStamp = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '--:-- UTC';
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const mon = UTC_MONTHS[d.getUTCMonth()];
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${day} ${mon} · ${hh}:${mm} UTC`;
+};
+
 export const formatLocalTime = (isoString, lon) => {
   if (!isoString) return '';
   // Check if isoString is HH:MM or actual ISO
